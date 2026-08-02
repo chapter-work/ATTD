@@ -376,37 +376,36 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
                           </div>
                         </td>
 
-                        {/* 유럽 공급가 — 정수 표시 + 리테일가 참고 */}
+                        {/* 유럽 공급가 — 1행: 합계(수량반영), 2행: 단가 입력 */}
                         <td className="px-2 py-2.5 align-top text-right">
-                          {/* 할인가 입력 (EUR) */}
-                          <div className="flex items-center justify-end gap-1">
+                          {/* 1행: 수량 합계 EUR */}
+                          <div className="text-xs font-semibold text-gray-800">
+                            €{Math.round(pi.price_eur * pi.qty).toLocaleString()}
+                          </div>
+                          {/* 2행: 단가 입력 + 리테일가 참고 */}
+                          <div className="flex items-center justify-end gap-1 mt-0.5">
                             <input
                               type="number" step="1" min="0"
                               value={Math.round(pi.price_eur)}
                               onChange={e => updateItem(pi.itemId, "price_eur", e.target.value)}
-                              className="w-20 text-right border border-gray-200 rounded px-1 py-0.5 text-xs font-semibold focus:outline-none focus:border-black"
+                              className="w-20 text-right border border-gray-200 rounded px-1 py-0.5 text-[10px] text-gray-500 focus:outline-none focus:border-black"
                             />
                             <span className="text-[10px] text-gray-400">€</span>
                           </div>
-                          {/* 리테일가 + 할인율 참고 */}
                           {(pi.snap.discount ?? 0) > 0 && (
                             <div className="text-[10px] text-gray-400 mt-0.5 text-right">
-                              리테일가 €{Math.round(pi.snap.price_eur)}
+                              리테일 €{Math.round(pi.snap.price_eur)}
                               <span className="ml-1 text-blue-500">-{pi.snap.discount}%</span>
-                            </div>
-                          )}
-                          {/* 수량 합계 */}
-                          {pi.qty > 1 && (
-                            <div className="text-[10px] text-gray-400 mt-0.5 text-right">
-                              합계 €{Math.round(pi.price_eur * pi.qty).toLocaleString()}
                             </div>
                           )}
                         </td>
 
-                        {/* 환산 원가 (자동) */}
+                        {/* 환산 원가 — 1행: 합계, 2행: 단가 */}
                         <td className="px-2 py-2.5 align-top text-right">
-                          <div className="font-medium text-gray-700">{fKrwFull(c.cost_krw)}</div>
-                          <div className="text-[10px] text-gray-400 mt-0.5">수량 합계 {fKrwFull(c.cost_krw_total)}</div>
+                          <div className="font-medium text-gray-700">{fKrwFull(c.cost_krw_total)}</div>
+                          {pi.qty > 1 && (
+                            <div className="text-[10px] text-gray-400 mt-0.5">단가 {fKrwFull(c.cost_krw)}</div>
+                          )}
                         </td>
 
                         {/* 부대비율 (입력 가능) */}
@@ -419,16 +418,20 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
                           />
                         </td>
 
-                        {/* 부대비 (자동) */}
+                        {/* 부대비 — 1행: 합계, 2행: 단가 */}
                         <td className="px-2 py-2.5 align-top text-right">
-                          <div className="text-gray-700">{fKrwFull(c.supply_cost)}</div>
-                          <div className="text-[10px] text-gray-400 mt-0.5">수량 합계 {fKrwFull(c.supply_cost_total)}</div>
+                          <div className="text-gray-700">{fKrwFull(c.supply_cost_total)}</div>
+                          {pi.qty > 1 && (
+                            <div className="text-[10px] text-gray-400 mt-0.5">단가 {fKrwFull(c.supply_cost)}</div>
+                          )}
                         </td>
 
-                        {/* 총 원가 (자동) */}
+                        {/* 총 원가 — 1행: 합계, 2행: 단가 */}
                         <td className="px-2 py-2.5 align-top text-right">
-                          <div className="font-semibold text-gray-800">{fKrwFull(c.total_cost)}</div>
-                          <div className="text-[10px] text-gray-400 mt-0.5">수량 합계 {fKrwFull(c.total_cost_total)}</div>
+                          <div className="font-semibold text-gray-800">{fKrwFull(c.total_cost_total)}</div>
+                          {pi.qty > 1 && (
+                            <div className="text-[10px] text-gray-400 mt-0.5">단가 {fKrwFull(c.total_cost)}</div>
+                          )}
                         </td>
 
                         {/* 마진율 (입력 가능) */}
@@ -441,16 +444,11 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
                           />
                         </td>
 
-                        {/* 고객판매단가 (1개, 자동) */}
+                        {/* 고객판매단가 — 1행: 합계, 2행: 단가 */}
                         <td className="px-2 py-2.5 align-top text-right">
-                          <div className="font-bold text-black">{fKrwFull(c.sell_price)}</div>
-                        </td>
-
-                        {/* 합계 (단가×수량, 자동) */}
-                        <td className="px-2 py-2.5 align-top text-right">
-                          <div className="font-semibold text-gray-800">{fKrwFull(c.sell_price_total)}</div>
+                          <div className="font-bold text-black">{fKrwFull(c.sell_price_total)}</div>
                           {pi.qty > 1 && (
-                            <div className="text-[10px] text-gray-400 mt-0.5">{pi.qty}개 × {fKrwFull(c.sell_price)}</div>
+                            <div className="text-[10px] text-gray-400 mt-0.5">단가 {fKrwFull(c.sell_price)}</div>
                           )}
                         </td>
 
@@ -473,13 +471,13 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
                           )}
                         </td>
 
-                        {/* 공식 소비자가 (EUR×1.22→KRW, 자동) */}
+                        {/* 공식 소비자가 — 1행: 합계, 2행: 단가 + EUR 참고 */}
                         <td className="px-2 py-2.5 align-top text-right">
-                          <div className="text-gray-700 font-medium">{fKrwFull(c.retail_krw)}</div>
-                          <div className="text-[10px] text-gray-400 mt-0.5">리테일 €{Math.round(pi.snap.price_eur).toLocaleString()} × 1.22</div>
+                          <div className="text-gray-700 font-medium">{fKrwFull(c.retail_krw_total)}</div>
                           {pi.qty > 1 && (
-                            <div className="text-[10px] text-gray-400 mt-0.5">합계 {fKrwFull(c.retail_krw_total)}</div>
+                            <div className="text-[10px] text-gray-400 mt-0.5">단가 {fKrwFull(c.retail_krw)}</div>
                           )}
+                          <div className="text-[10px] text-gray-400 mt-0.5">€{Math.round(pi.snap.price_eur).toLocaleString()} × 1.22</div>
                         </td>
 
                         {/* 할인율 (국내 소비자가 대비, 자동) */}
@@ -493,14 +491,16 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
                           )}
                         </td>
 
-                        {/* 이익금액 (자동) */}
+                        {/* 이익금액 — 1행: 합계, 2행: 단가 */}
                         <td className="px-2 py-2.5 align-top text-right">
-                          <div className={`font-semibold ${c.profit >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-                            {fKrwFull(c.profit)}
+                          <div className={`font-semibold ${c.profit_total >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                            {fKrwFull(c.profit_total)}
                           </div>
-                          <div className={`text-[10px] mt-0.5 ${c.profit_total >= 0 ? "text-emerald-500" : "text-red-400"}`}>
-                            수량 합계 {fKrwFull(c.profit_total)}
-                          </div>
+                          {pi.qty > 1 && (
+                            <div className={`text-[10px] mt-0.5 ${c.profit >= 0 ? "text-emerald-500" : "text-red-400"}`}>
+                              단가 {fKrwFull(c.profit)}
+                            </div>
+                          )}
                         </td>
 
                         {/* 삭제 */}
