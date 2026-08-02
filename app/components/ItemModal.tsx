@@ -184,10 +184,10 @@ export default function ItemModal({ open, item, onClose, onSave }: ItemModalProp
             />
           </div>
 
-          {/* 단가 + 할인율 */}
+          {/* 유럽 리테일가 + 할인율 */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">단가 EUR *</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">유럽 리테일가 EUR *</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">€</span>
                 <input

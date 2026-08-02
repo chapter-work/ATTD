@@ -31,7 +31,7 @@ export default function CatalogTable({ items, exchangeRate, onEdit, onDelete }: 
             <th className="px-3 py-3 text-left font-medium whitespace-nowrap">카테고리</th>
             <th className="px-3 py-3 text-left font-medium">치수</th>
             <th className="px-3 py-3 text-left font-medium">피니쉬 / 소재</th>
-            <th className="px-3 py-3 text-right font-medium whitespace-nowrap">단가</th>
+            <th className="px-3 py-3 text-right font-medium whitespace-nowrap">유럽 리테일가</th>
             <th className="px-3 py-3 text-center font-medium whitespace-nowrap">할인율</th>
             <th className="px-3 py-3 text-right font-medium whitespace-nowrap">할인가</th>
             <th className="px-2 py-3"></th>
