@@ -404,29 +404,27 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
                           </div>
                         </td>
 
-                        {/* 유럽 공급가 — 1행: 합계(수량반영), 2행: 단가 입력 */}
+                        {/* 유럽 공급가 — 1행: 합계(수량반영), 2행: 단가 입력, 3행: 리테일가 참고 */}
                         <td className="px-2 py-2.5 align-top text-right">
-                          {/* 1행: 단가 입력 (VAT제외 할인가, 소수점 2자리) */}
-                          <div className="flex items-center justify-end gap-1">
+                          {/* 1행: 합계 EUR (수량 × 단가) */}
+                          <div className="text-xs font-semibold text-gray-800">
+                            €{(pi.price_eur * pi.qty).toFixed(2)}
+                          </div>
+                          {/* 2행: 단가 입력 인풋 (qty>1이면 회색, qty=1이면 메인) */}
+                          <div className="flex items-center justify-end gap-1 mt-0.5">
                             <input
                               type="number" step="0.01" min="0"
                               value={pi.price_eur.toFixed(2)}
                               onChange={e => updateItem(pi.itemId, "price_eur", e.target.value)}
-                              className="w-20 text-right border border-gray-200 rounded px-1 py-0.5 text-xs font-semibold text-gray-800 focus:outline-none focus:border-black"
+                              className="w-20 text-right border border-gray-200 rounded px-1 py-0.5 text-[10px] text-gray-500 focus:outline-none focus:border-black"
                             />
                             <span className="text-[10px] text-gray-400">€</span>
                           </div>
-                          {/* 2행: 리테일가 + 할인율 참고 */}
+                          {/* 3행: 리테일가 + 할인율 참고 */}
                           {(pi.snap.discount ?? 0) > 0 && (
                             <div className="text-[10px] text-gray-400 mt-0.5 text-right">
                               리테일 €{pi.snap.price_eur.toFixed(2)}
                               <span className="ml-1 text-blue-500">-{pi.snap.discount}%</span>
-                            </div>
-                          )}
-                          {/* 수량 > 1 일 때 합계 EUR 표시 */}
-                          {pi.qty > 1 && (
-                            <div className="text-[10px] text-gray-400 mt-0.5 text-right">
-                              합계 €{(pi.price_eur * pi.qty).toFixed(2)}
                             </div>
                           )}
                         </td>
