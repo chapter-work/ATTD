@@ -404,25 +404,21 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
                           </div>
                         </td>
 
-                        {/* 유럽 공급가 — 1행: 합계(수량반영), 2행: 단가 입력, 3행: 리테일가 참고 */}
+                        {/* 유럽 공급가 — 1행: 합계, 2행: 단가, 3행: 리테일가 참고 */}
                         <td className="px-2 py-2.5 align-top text-right">
-                          {/* 1행: 합계 EUR (수량 × 단가) */}
+                          {/* 1행: 합계 EUR */}
                           <div className="text-xs font-semibold text-gray-800">
                             €{(pi.price_eur * pi.qty).toFixed(2)}
                           </div>
-                          {/* 2행: 단가 입력 인풋 (qty>1이면 회색, qty=1이면 메인) */}
-                          <div className="flex items-center justify-end gap-1 mt-0.5">
-                            <input
-                              type="number" step="0.01" min="0"
-                              value={pi.price_eur.toFixed(2)}
-                              onChange={e => updateItem(pi.itemId, "price_eur", e.target.value)}
-                              className="w-20 text-right border border-gray-200 rounded px-1 py-0.5 text-[10px] text-gray-500 focus:outline-none focus:border-black"
-                            />
-                            <span className="text-[10px] text-gray-400">€</span>
-                          </div>
+                          {/* 2행: 단가 (읽기 전용) */}
+                          {pi.qty > 1 && (
+                            <div className="text-[10px] text-gray-400 mt-0.5">
+                              단가 €{pi.price_eur.toFixed(2)}
+                            </div>
+                          )}
                           {/* 3행: 리테일가 + 할인율 참고 */}
                           {(pi.snap.discount ?? 0) > 0 && (
-                            <div className="text-[10px] text-gray-400 mt-0.5 text-right">
+                            <div className="text-[10px] text-gray-400 mt-0.5">
                               리테일 €{pi.snap.price_eur.toFixed(2)}
                               <span className="ml-1 text-blue-500">-{pi.snap.discount}%</span>
                             </div>
