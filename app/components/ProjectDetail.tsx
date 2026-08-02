@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Project, ProjectItem, ProjectStatus,
-  Item, calcProjectItem, calcProjectSummary,
+  Item, Quote, QuoteItem,
+  calcProjectItem, calcProjectSummary,
   fEur, fKrw, fKrwFull, discountedPrice,
 } from "@/lib/supabase";
 
@@ -281,6 +282,7 @@ interface ProjectDetailProps {
   items: Item[];
   onSave: (p: Partial<Project>) => Promise<void>;
   onClose: () => void;
+  onCreateQuote?: (quote: Partial<Quote>) => Promise<void>;
 }
 
 // ── 신규 ProjectItem 생성 ─────────────────────────────────
@@ -297,7 +299,7 @@ function makeProjectItem(item: Item, baseMargin: number): ProjectItem {
 }
 
 // ────────────────────────────────────────────────────────────
-export default function ProjectDetail({ project, items, onSave, onClose }: ProjectDetailProps) {
+export default function ProjectDetail({ project, items, onSave, onClose, onCreateQuote }: ProjectDetailProps) {
   const [title,        setTitle]        = useState("");
   const [client,       setClient]       = useState("");
   const [projectDate,  setProjectDate]  = useState(new Date().toISOString().slice(0, 10));
@@ -310,6 +312,7 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
   const [itemSearch, setItemSearch] = useState("");
   const [showItemPicker, setShowItemPicker] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [creatingQuote, setCreatingQuote] = useState(false);
 
   useEffect(() => {
     if (project) {
@@ -735,25 +738,49 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
             04 · 고객 견적 전환
           </h3>
           <div className="flex flex-wrap gap-3">
-            {/* 고객 견적서로 변환 — 활성화 */}
+            {/* 고객 견적서 생성 — Supabase 저장 후 견적서 탭 이동 */}
             <button
-              onClick={() => {
+              onClick={async () => {
                 if (projItems.length === 0) {
                   alert("품목을 먼저 추가하세요");
                   return;
                 }
-                openProjectQuotePrintWindow(title, client, projectDate, projItems, exchangeRate, vatRate);
+                if (!onCreateQuote) return;
+                setCreatingQuote(true);
+                try {
+                  // ProjectItem[] → QuoteItem[] 변환 (KRW 판매가 기반)
+                  const quoteItems: QuoteItem[] = projItems.map(pi => {
+                    const c = calcProjectItem(pi, exchangeRate, vatRate);
+                    const sellPriceEurEquiv = c.sell_price / exchangeRate;
+                    return {
+                      itemId: pi.itemId,
+                      qty: pi.qty,
+                      discount: 0,
+                      snap: { ...pi.snap, price_eur: sellPriceEurEquiv },
+                    };
+                  });
+                  await onCreateQuote({
+                    title: title || "프로젝트 견적서",
+                    client,
+                    quote_date: projectDate,
+                    currency: "KRW",
+                    exchange_rate: exchangeRate,
+                    items: quoteItems,
+                  });
+                } finally {
+                  setCreatingQuote(false);
+                }
               }}
-              className="flex items-center gap-2 px-4 py-2.5 bg-black text-white text-xs font-semibold rounded-lg hover:bg-gray-800 transition-colors"
+              disabled={creatingQuote}
+              className="flex items-center gap-2 px-4 py-2.5 bg-black text-white text-xs font-semibold rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                 <polyline points="14 2 14 8 20 8"/>
-                <polyline points="6 9 6 2 18 2 18 9"/>
-                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-                <rect x="6" y="14" width="12" height="8"/>
+                <line x1="12" y1="11" x2="12" y2="17"/>
+                <line x1="9" y1="14" x2="15" y2="14"/>
               </svg>
-              고객 견적서 출력
+              {creatingQuote ? "생성 중..." : "고객 견적서 생성"}
             </button>
             {/* 내부 원가표 — 준비중 유지 */}
             <button
@@ -770,7 +797,7 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
             </button>
           </div>
           {projItems.length === 0 && (
-            <p className="mt-2 text-[10px] text-gray-300">품목을 추가하면 고객 견적서 출력이 가능합니다</p>
+            <p className="mt-2 text-[10px] text-gray-300">품목을 추가하면 고객 견적서 생성이 가능합니다</p>
           )}
         </section>
 

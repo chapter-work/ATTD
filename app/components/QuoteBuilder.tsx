@@ -209,8 +209,9 @@ export default function QuoteBuilder({
                     <th className="pb-1.5 text-left w-7">No.</th>
                     <th className="pb-1.5 w-10"></th>
                     <th className="pb-1.5 text-left">브랜드 / 모델</th>
+                    <th className="pb-1.5 text-left w-24">피니쉬</th>
+                    <th className="pb-1.5 text-right w-28">단가(판매가)</th>
                     <th className="pb-1.5 text-center w-20">수량</th>
-                    <th className="pb-1.5 text-center w-20">할인율</th>
                     <th className="pb-1.5 text-right w-28">합계</th>
                     <th className="pb-1.5 w-8"></th>
                   </tr>
@@ -231,6 +232,17 @@ export default function QuoteBuilder({
                           <div className="text-[10px] text-gray-400 font-semibold">{qi.snap.brand}</div>
                           <div className="text-xs font-semibold text-black">{qi.snap.model}</div>
                         </td>
+                        <td className="py-2 text-left">
+                          <div className="text-[10px] text-gray-500">{qi.snap.finish || "—"}</div>
+                        </td>
+                        <td className="py-2 text-right whitespace-nowrap">
+                          {(currency === "BOTH" || currency === "EUR") && (
+                            <div className="text-xs font-semibold text-gray-700">{fEur(unit)}</div>
+                          )}
+                          {(currency === "BOTH" || currency === "KRW") && (
+                            <div className="text-[10px] text-gray-400">{fKrw(unit, exchangeRate)}</div>
+                          )}
+                        </td>
                         <td className="py-2 text-center">
                           <div className="flex items-center justify-center gap-1">
                             <button
@@ -242,18 +254,6 @@ export default function QuoteBuilder({
                               onClick={() => updateQty(qi.itemId, qi.qty + 1)}
                               className="w-6 h-6 border border-gray-200 rounded text-xs hover:bg-gray-100"
                             >+</button>
-                          </div>
-                        </td>
-                        <td className="py-2 text-center">
-                          <div className="flex items-center justify-center gap-0.5">
-                            <input
-                              type="number" min="0" max="100"
-                              value={qi.discount}
-                              onChange={e => updateDisc(qi.itemId, parseFloat(e.target.value) || 0)}
-                              className="w-12 text-center border border-gray-200 rounded px-1 py-0.5
-                                         text-xs focus:outline-none focus:border-black"
-                            />
-                            <span className="text-[10px] text-gray-400">%</span>
                           </div>
                         </td>
                         <td className="py-2 text-right whitespace-nowrap">

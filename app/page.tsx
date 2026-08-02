@@ -268,6 +268,15 @@ export default function Home() {
                   setShowProjectDetail(false);
                   setSelectedProject(null);
                 }}
+                onCreateQuote={async (quoteData) => {
+                  const payload = { ...quoteData, updated_at: new Date().toISOString() };
+                  const { error } = await supabase.from("quotes").insert([payload]);
+                  if (error) { alert("견적서 저장 오류: " + error.message); return; }
+                  await loadQuotes();
+                  setTab("quotes");
+                  setShowProjectDetail(false);
+                  alert("견적서가 생성되었습니다. 견적서 탭에서 확인하세요.");
+                }}
               />
             </div>
           ) : (
