@@ -327,10 +327,10 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
           {/* 품목 테이블 */}
           {projItems.length > 0 ? (
             <div className="overflow-x-auto -mx-4">
-              <table className="w-full text-xs border-collapse" style={{ minWidth: "900px" }}>
+              <table className="w-full text-xs border-collapse" style={{ minWidth: "980px" }}>
                 <thead>
                   <tr className="bg-gray-50 border-y border-gray-200">
-                    <th className="text-left px-4 py-2 font-semibold text-gray-500 w-[200px]">품목</th>
+                    <th className="text-left px-4 py-2 font-semibold text-gray-500 w-[260px]">품목</th>
                     <th className="text-center px-2 py-2 font-semibold text-gray-500 w-12">수량</th>
                     <th className="text-right px-2 py-2 font-semibold text-gray-500 w-32">유럽 공급가<br/><span className="font-normal text-gray-400">할인가 · EUR</span></th>
                     <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">환산 원가<br/><span className="font-normal text-gray-400">× 환율</span></th>
@@ -338,8 +338,7 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
                     <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">부대비<br/><span className="font-normal text-gray-400">KRW</span></th>
                     <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">총 원가<br/><span className="font-normal text-gray-400">KRW</span></th>
                     <th className="text-center px-2 py-2 font-semibold text-gray-500 w-16">마진율<br/><span className="font-normal text-gray-400">%</span></th>
-                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">고객판매단가<br/><span className="font-normal text-gray-400">단가 KRW</span></th>
-                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">합계<br/><span className="font-normal text-gray-400">단가×수량 KRW</span></th>
+                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">고객판매가<br/><span className="font-normal text-gray-400">합계 KRW</span></th>
                     <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">국내 소비자가<br/><span className="font-normal text-gray-400">KRW 직접입력</span></th>
                     <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">공식 소비자가<br/><span className="font-normal text-gray-400">EUR×1.22 → KRW</span></th>
                     <th className="text-center px-2 py-2 font-semibold text-gray-500 w-16">할인율<br/><span className="font-normal text-gray-400">%</span></th>
@@ -352,12 +351,36 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
                     const c = calcProjectItem(pi, exchangeRate, vatRate); // vatRate = 국내 부가세 (기본 10%)
                     return (
                       <tr key={pi.itemId} className="hover:bg-gray-50 transition-colors">
-                        {/* 품목명 */}
-                        <td className="px-4 py-2.5 align-top">
-                          <div className="font-semibold text-gray-800">{pi.snap.brand}</div>
-                          <div className="text-[10px] text-gray-400 mt-0.5 leading-tight">
-                            {pi.snap.model}
-                            {pi.snap.finish && <span className="ml-1">· {pi.snap.finish}</span>}
+                        {/* 품목 — 사진 + 4행 정보 */}
+                        <td className="px-3 py-2.5 align-top">
+                          <div className="flex items-start gap-2">
+                            {/* 사진 영역 */}
+                            <div className="flex-shrink-0 w-12 h-12 rounded border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center">
+                              {pi.snap.img ? (
+                                <img
+                                  src={pi.snap.img}
+                                  alt={pi.snap.model}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5">
+                                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                                  <polyline points="21 15 16 10 5 21"/>
+                                </svg>
+                              )}
+                            </div>
+                            {/* 텍스트 4행 */}
+                            <div className="min-w-0">
+                              <div className="text-[10px] font-bold text-gray-400 tracking-wide uppercase leading-tight">{pi.snap.brand}</div>
+                              <div className="text-xs font-semibold text-gray-800 leading-snug mt-0.5 break-words">{pi.snap.model}</div>
+                              {pi.snap.dims && (
+                                <div className="text-[10px] text-gray-400 mt-0.5 leading-tight">{pi.snap.dims}</div>
+                              )}
+                              {pi.snap.finish && (
+                                <div className="text-[10px] text-gray-400 leading-tight">{pi.snap.finish}</div>
+                              )}
+                            </div>
                           </div>
                         </td>
 
