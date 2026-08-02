@@ -1,21 +1,24 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { supabase, Item, Quote } from "@/lib/supabase";
+import { supabase, Item, Quote, Project } from "@/lib/supabase";
 import Header from "@/app/components/Header";
 import BottomNav from "@/app/components/BottomNav";
 import CatalogTable from "@/app/components/CatalogTable";
 import ItemModal from "@/app/components/ItemModal";
 import QuoteBuilder from "@/app/components/QuoteBuilder";
 import SavedQuotes from "@/app/components/SavedQuotes";
+import ProjectList from "@/app/components/ProjectList";
+import ProjectDetail from "@/app/components/ProjectDetail";
 
-type Tab = "catalog" | "quotes";
+type Tab = "catalog" | "projects" | "quotes";
 type SyncStatus = "online" | "offline" | "syncing";
 
 export default function Home() {
   const [tab, setTab] = useState<Tab>("catalog");
   const [items, setItems] = useState<Item[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("offline");
   const [exchangeRate, setExchangeRate] = useState(1700);
 
@@ -31,6 +34,11 @@ export default function Home() {
   // 견적서
   const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
 
+  // 프로젝트: selectedProject = null이면 목록, 아니면 해당 프로젝트 편집
+  // "new" 문자열을 특수값으로 사용하여 신규 생성 구분
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [showProjectDetail, setShowProjectDetail] = useState(false);
+
   // ── 데이터 로드 ──────────────────────────────────────
   const loadItems = useCallback(async () => {
     const { data, error } = await supabase
@@ -44,9 +52,17 @@ export default function Home() {
     if (!error && data) setQuotes(data as Quote[]);
   }, []);
 
+  const loadProjects = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("projects").select("*").order("created_at", { ascending: false });
+    if (!error && data) setProjects(data as Project[]);
+  }, []);
+
   useEffect(() => {
     setSyncStatus("syncing");
-    Promise.all([loadItems(), loadQuotes()]).then(() => setSyncStatus("online")).catch(() => setSyncStatus("offline"));
+    Promise.all([loadItems(), loadQuotes(), loadProjects()])
+      .then(() => setSyncStatus("online"))
+      .catch(() => setSyncStatus("offline"));
 
     // Realtime
     const channel = supabase
@@ -59,16 +75,19 @@ export default function Home() {
         setSyncStatus("syncing");
         loadQuotes().then(() => setSyncStatus("online"));
       })
+      .on("postgres_changes", { event: "*", schema: "public", table: "projects" }, () => {
+        setSyncStatus("syncing");
+        loadProjects().then(() => setSyncStatus("online"));
+      })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [loadItems, loadQuotes]);
+  }, [loadItems, loadQuotes, loadProjects]);
 
   // ── 품목 CRUD ─────────────────────────────────────────
   const handleSaveItem = async (data: Partial<Item>, imgFile?: File | null) => {
     let imgData = editingItem?.img || null;
 
-    // 이미지: base64로 저장 (현재 방식 유지, Supabase Storage 업그레이드 가능)
     if (imgFile) {
       await new Promise<void>((resolve) => {
         const reader = new FileReader();
@@ -112,6 +131,31 @@ export default function Home() {
     if (editingQuote?.id === id) setEditingQuote(null);
   };
 
+  // ── 프로젝트 CRUD ─────────────────────────────────────
+  const handleSaveProject = async (projectData: Partial<Project>) => {
+    const payload = { ...projectData, updated_at: new Date().toISOString() };
+    if (projectData.id) {
+      const { error } = await supabase.from("projects").update(payload).eq("id", projectData.id);
+      if (error) { alert("저장 오류: " + error.message); return; }
+    } else {
+      const { data, error } = await supabase.from("projects").insert([payload]).select().single();
+      if (error) { alert("저장 오류: " + error.message); return; }
+      if (data) setSelectedProject(data as Project);
+    }
+    await loadProjects();
+    alert("프로젝트가 저장되었습니다");
+  };
+
+  const handleDeleteProject = async (id: string) => {
+    if (!confirm("이 프로젝트를 삭제하시겠습니까?")) return;
+    await supabase.from("projects").delete().eq("id", id);
+    await loadProjects();
+    if (selectedProject?.id === id) {
+      setSelectedProject(null);
+      setShowProjectDetail(false);
+    }
+  };
+
   // ── 필터 ─────────────────────────────────────────────
   const brands = [...new Set(items.map(i => i.brand))].sort();
   const categories = [...new Set(items.map(i => i.category).filter(Boolean))].sort();
@@ -129,13 +173,22 @@ export default function Home() {
     <div className="flex flex-col h-screen overflow-hidden">
       <Header
         activeTab={tab}
-        onTabChange={setTab}
+        onTabChange={(t) => {
+          setTab(t);
+          // 탭 이동 시 상세 뷰 닫기
+          if (t !== "projects") setShowProjectDetail(false);
+        }}
         syncStatus={syncStatus}
         onAddItem={() => { setEditingItem(null); setModalOpen(true); }}
+        onNewProject={() => {
+          setSelectedProject(null);
+          setShowProjectDetail(true);
+        }}
       />
 
       <main className="flex-1 overflow-hidden">
-        {/* ── 카탈로그 ── */}
+
+        {/* ── 상품관리 ── */}
         <div className={`h-full flex flex-col ${tab === "catalog" ? "" : "hidden"}`}>
           {/* 검색/필터 바 */}
           <div className="bg-white border-b border-gray-100 px-4 py-3 flex flex-wrap gap-2 no-print">
@@ -163,7 +216,6 @@ export default function Home() {
             <span className="text-xs text-gray-400 self-center">{filteredItems.length}개</span>
           </div>
 
-          {/* 테이블 */}
           <div className="flex-1 overflow-auto">
             <CatalogTable
               items={filteredItems}
@@ -174,7 +226,59 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ── 견적서 ── */}
+        {/* ── 내부 프로젝트 ── */}
+        <div className={`h-full flex overflow-hidden ${tab === "projects" ? "" : "hidden"}`}>
+          {/* 목록 패널 (PC: 좌측 사이드바, 모바일: showProjectDetail일 때 숨김) */}
+          <div className={`
+            flex flex-col border-r border-gray-200 bg-white
+            ${showProjectDetail ? "hidden lg:flex lg:w-72 xl:w-80 flex-shrink-0" : "flex-1 lg:w-72 xl:w-80 lg:flex-none"}
+          `}>
+            <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xs font-bold text-gray-500 tracking-wide uppercase">프로젝트 목록</h2>
+                <span className="text-[10px] text-gray-400">{projects.length}건</span>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto pb-24 lg:pb-0">
+              <ProjectList
+                projects={projects}
+                selectedId={selectedProject?.id ?? null}
+                onSelect={(p) => {
+                  setSelectedProject(p);
+                  setShowProjectDetail(true);
+                }}
+                onDelete={handleDeleteProject}
+              />
+            </div>
+          </div>
+
+          {/* 상세 패널 */}
+          {showProjectDetail ? (
+            <div className="flex-1 overflow-hidden">
+              <ProjectDetail
+                project={selectedProject}
+                items={items}
+                onSave={handleSaveProject}
+                onClose={() => {
+                  setShowProjectDetail(false);
+                  setSelectedProject(null);
+                }}
+              />
+            </div>
+          ) : (
+            /* PC: 상세 없을 때 빈 영역 */
+            <div className="hidden lg:flex flex-1 items-center justify-center bg-gray-50">
+              <div className="text-center">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5" className="mx-auto mb-3">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+                <p className="text-sm text-gray-400">프로젝트를 선택하거나 새로 만드세요</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── 고객 견적서 ── */}
         <div className={`h-full overflow-auto p-4 pb-24 lg:pb-4 ${tab === "quotes" ? "" : "hidden"}`}>
           <div className="flex flex-col lg:flex-row gap-4">
             <QuoteBuilder
@@ -192,10 +296,14 @@ export default function Home() {
             />
           </div>
         </div>
+
       </main>
 
       {/* 모바일 하단 탭 */}
-      <BottomNav activeTab={tab} onTabChange={setTab} />
+      <BottomNav activeTab={tab} onTabChange={(t) => {
+        setTab(t);
+        if (t !== "projects") setShowProjectDetail(false);
+      }} />
 
       {/* 품목 등록/수정 모달 */}
       <ItemModal
