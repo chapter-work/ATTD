@@ -141,17 +141,18 @@ function openPrintWindow(quote: Quote) {
     th:nth-child(6){ text-align:right; width:110px; }
     tbody tr       { border-bottom: 1px solid #eee; }
 
-    /* 합계 — 단가와 동일한 크기 */
+    /* 합계 — 테이블 헤더와 동일한 1.5px 선 */
     .totals        { display: flex; justify-content: flex-end; gap: 32px;
-                     border-top: 2px solid #111; padding-top: 12px; margin-top: 0; margin-bottom: 28px; }
+                     border-top: 1.5px solid #111; border-bottom: 1.5px solid #111;
+                     padding: 10px 0; margin-top: 0; margin-bottom: 28px; }
     .totals .total-label { font-size: 11px; color: #999; margin-bottom: 2px; text-align: right; }
     .totals .total-value { font-size: 13px; font-weight: 700; color: #111; text-align: right; }
 
-    /* 서명란 — 날짜 / 고객이름 / 서명  한 행 */
+    /* 서명란 — 날짜 / 고객이름 / 서명  1/3씩 균등 */
     .sign-section {
       margin-bottom: 32px;
       padding: 22px 0 0 0;
-      border-top: 2px solid #111;
+      border-top: 1.5px solid #111;
     }
     .sign-title {
       font-size: 11px; font-weight: 800; letter-spacing: 0.12em;
@@ -160,12 +161,9 @@ function openPrintWindow(quote: Quote) {
     .sign-row {
       display: flex; gap: 20px; align-items: flex-end;
     }
-    /* 날짜 칸 — 좁게 */
-    .sign-box-date  { flex: 1.2; }
-    /* 이름 칸 — 중간 */
-    .sign-box-name  { flex: 1.4; }
-    /* 서명 칸 — 넓게 */
-    .sign-box-sign  { flex: 2; }
+    .sign-box-date,
+    .sign-box-name,
+    .sign-box-sign  { flex: 0 0 calc(33.33% - 14px); width: calc(33.33% - 14px); }
     .sign-label {
       font-size: 10px; color: #999; margin-bottom: 10px; letter-spacing: 0.04em;
     }
@@ -522,8 +520,9 @@ function QuotePreview({ quote }: { quote: Quote }) {
         </tbody>
       </table>
 
-      {/* 합계 — 단가와 동일한 크기 */}
-      <div className="flex justify-end gap-7 py-3 border-t-2 border-black mb-6">
+      {/* 합계 — 테이블 헤더와 동일한 1.5px 선 */}
+      <div className="flex justify-end gap-7 mb-6"
+        style={{borderTop: "1.5px solid #111", borderBottom: "1.5px solid #111", padding: "10px 0"}}>
         {(currency === "BOTH" || currency === "EUR") && (
           <div className="text-right">
             <div className="text-[11px] text-gray-400 mb-0.5">합계 EUR</div>
@@ -538,26 +537,26 @@ function QuotePreview({ quote }: { quote: Quote }) {
         )}
       </div>
 
-      {/* ── 서명란: 날짜 / 고객이름 / 서명  한 행 ── */}
-      <div className="pt-5 border-t-2 border-black mb-6">
+      {/* ── 서명란: 1/3씩 균등  ── */}
+      <div className="pt-5 mb-6" style={{borderTop: "1.5px solid #111"}}>
         <h4 className="text-[11px] font-extrabold text-gray-500 mb-4 tracking-widest uppercase">
           Confirmation &amp; Signature
         </h4>
-        <div className="flex gap-5 items-end">
-          {/* 날짜 */}
-          <div style={{flex: "1.2"}}>
+        <div className="flex items-end" style={{gap: "20px"}}>
+          {/* 납짜 */}
+          <div style={{flex: "0 0 calc(33.33% - 14px)", width: "calc(33.33% - 14px)"}}>
             <div className="text-[10px] text-gray-400 mb-2.5 tracking-wide">날짜 Date</div>
-            <div className="min-h-[38px] border-b-2 border-black" />
+            <div className="min-h-[38px]" style={{borderBottom: "1.5px solid #111"}} />
           </div>
           {/* 고객 이름 */}
-          <div style={{flex: "1.4"}}>
+          <div style={{flex: "0 0 calc(33.33% - 14px)", width: "calc(33.33% - 14px)"}}>
             <div className="text-[10px] text-gray-400 mb-2.5 tracking-wide">고객 성명 Client Name</div>
-            <div className="min-h-[38px] border-b-2 border-black" />
+            <div className="min-h-[38px]" style={{borderBottom: "1.5px solid #111"}} />
           </div>
           {/* 서명 */}
-          <div style={{flex: "2"}}>
+          <div style={{flex: "0 0 calc(33.33% - 14px)", width: "calc(33.33% - 14px)"}}>
             <div className="text-[10px] text-gray-400 mb-2.5 tracking-wide">서명 Signature</div>
-            <div className="min-h-[38px] border-b-2 border-black" />
+            <div className="min-h-[38px]" style={{borderBottom: "1.5px solid #111"}} />
           </div>
         </div>
       </div>
