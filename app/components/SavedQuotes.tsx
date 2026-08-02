@@ -152,15 +152,72 @@ function openPrintWindow(quote: Quote) {
     .tc-list       { list-style: none; padding: 0; }
     .tc-footer     { margin-top: 16px; padding-top: 14px; border-top: 1px solid #eee; }
 
+    /* ── 상단 고정 툴바 (화면 전용) ── */
+    .toolbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 52px;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 999;
+    }
+    .toolbar-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.12em;
+    }
+    .toolbar-actions { display: flex; gap: 8px; align-items: center; }
+    .btn-print {
+      display: flex; align-items: center; gap: 6px;
+      background: #fff; color: #111;
+      border: none; border-radius: 8px;
+      padding: 7px 14px;
+      font-size: 12px; font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-print:active { background: #e5e5e5; }
+    .btn-close {
+      display: flex; align-items: center; justify-content: center;
+      width: 34px; height: 34px;
+      background: rgba(255,255,255,0.12); color: #fff;
+      border: none; border-radius: 50%;
+      font-size: 18px; cursor: pointer;
+    }
+    .btn-close:active { background: rgba(255,255,255,0.25); }
+
+    /* 툴바 높이만큼 body 상단 여백 */
+    body { padding-top: 72px; }
+
     /* 인쇄 설정 */
     @page { size: A4 portrait; margin: 14mm 12mm; }
     @media print {
-      body { padding: 0; }
+      .toolbar { display: none !important; }
+      body { padding: 0 48px; }
       .no-print { display: none !important; }
     }
   </style>
 </head>
 <body>
+
+  <!-- 상단 툴바 (화면 전용, 인쇄 시 숨김) -->
+  <div class="toolbar">
+    <span class="toolbar-title">ATTD 견적서</span>
+    <div class="toolbar-actions">
+      <button class="btn-print" onclick="window.print()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="6 9 6 2 18 2 18 9"/>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+          <rect x="6" y="14" width="12" height="8"/>
+        </svg>
+        인쇄 / PDF 저장
+      </button>
+      <button class="btn-close" onclick="window.close()" title="닫기">✕</button>
+    </div>
+  </div>
 
   <!-- ATTD 브랜드 타이틀 -->
   <div class="attd-header">
@@ -209,11 +266,6 @@ function openPrintWindow(quote: Quote) {
     <div class="tc-footer">${footerHtml}</div>
   </div>
 
-  <script>
-    window.onload = function() {
-      window.print();
-    };
-  </script>
 </body>
 </html>`;
 
