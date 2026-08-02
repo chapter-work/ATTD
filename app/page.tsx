@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase, Item, Quote, Project } from "@/lib/supabase";
-import Header from "@/app/components/Header";
+import Header, { SubHeader } from "@/app/components/Header";
 import BottomNav from "@/app/components/BottomNav";
 import CatalogTable from "@/app/components/CatalogTable";
 import ItemModal from "@/app/components/ItemModal";
@@ -171,14 +171,16 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <Header
+      {/* ── 로고 헤더 ── */}
+      <Header syncStatus={syncStatus} />
+
+      {/* ── 탭 + 액션버튼 서브헤더 ── */}
+      <SubHeader
         activeTab={tab}
         onTabChange={(t) => {
           setTab(t);
-          // 탭 이동 시 상세 뷰 닫기
           if (t !== "projects") setShowProjectDetail(false);
         }}
-        syncStatus={syncStatus}
         onAddItem={() => { setEditingItem(null); setModalOpen(true); }}
         onNewProject={() => {
           setSelectedProject(null);
