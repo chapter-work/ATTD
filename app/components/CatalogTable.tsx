@@ -64,7 +64,7 @@ export default function CatalogTable({ items, exchangeRate, onEdit, onDelete }: 
 
                 {/* 브랜드 */}
                 <td className="px-3 py-2">
-                  <span className="inline-block bg-black text-white text-[10px] font-semibold px-2 py-0.5 rounded whitespace-nowrap">
+                  <span className="text-xs font-semibold text-gray-800 whitespace-nowrap">
                     {item.brand}
                   </span>
                 </td>
