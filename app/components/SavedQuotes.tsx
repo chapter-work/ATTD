@@ -3,15 +3,24 @@
 import { useState } from "react";
 import { Quote, fEur, fKrw, discountedPrice } from "@/lib/supabase";
 
+/* ─────────────────────────────────────────────────────────
+   Terms & Conditions 최신 문구
+───────────────────────────────────────────────────────── */
 const TERMS = [
-  "본 견적은 해외 브랜드의 정품 제품을 기준으로 작성되었습니다.",
-  "계약 완료 후 주문은 즉시 해외 제조사로 진행되며, 모든 제품은 고객을 위한 Order Made 방식으로 제작 또는 발주됩니다. 따라서 계약 완료 후에는 모델, 옵션, 마감, 수량 등의 변경 및 주문 취소가 불가합니다.",
-  "모든 주문은 상품대금 100% 선결제를 원칙으로 하며, 결제 완료 후 해외 발주가 진행됩니다.",
-  "예상 납기는 해외 제조사의 생산 일정, 국제 운송 및 통관 절차에 따라 변동될 수 있으며, 일정 변경 시 신속히 안내드립니다.",
+  "본 견적은 해외 프리미엄 브랜드의 정품 제품을 기준으로 작성되었습니다.",
+  "계약은 상품대금 100% 결제 완료 시 성립되며, 계약 완료와 동시에 해외 제조사로 주문이 진행됩니다.",
+  "모든 제품은 고객님만을 위해 정식 주문되는 Order Made 상품으로, 해외 발주가 완료된 이후에는 모델, 옵션, 마감, 수량 등의 변경 및 주문 취소가 불가합니다.",
+  "예상 납기는 제품 제작 약 10~12주, 해상 운송 약 8~12주가 소요됩니다. 다만 해외 제조사의 생산 일정, 국제 운송 및 통관 절차 등에 따라 변동될 수 있으며, 일정 변경 시 신속히 안내드립니다.",
   "천연 원목, 대리석, 가죽 등 천연 소재는 제품마다 색상, 무늬 및 질감에 자연스러운 차이가 있을 수 있으며, 이는 소재 고유의 특성으로 제품의 하자에 해당하지 않습니다.",
   "설치 완료 후 제품의 외관 및 수량을 확인한 경우 정상 인도된 것으로 간주하며, 제조상의 하자는 해당 브랜드의 품질보증 기준에 따라 처리됩니다.",
-  "본 견적의 유효기간은 발행일로부터 30일입니다.",
+  "본 견적의 유효기간은 발행일로부터 10일입니다.",
 ];
+
+const TERMS_FOOTER = `ATTD는 세계 각국의 프리미엄 리빙 브랜드를 고객의 공간에 연결합니다.
+
+취향과 삶의 방식을 함께 고민하며, 공간과 조화를 이루는 가구·조명·패브릭·오브제를 큐레이션하여 완성도 높은 공간 경험을 제안합니다.
+
+모든 제품은 고객님만을 위해 정식 주문 및 수입되는 프라이빗 오더 상품입니다.`;
 
 interface SavedQuotesProps {
   quotes: Quote[];
@@ -19,13 +28,210 @@ interface SavedQuotesProps {
   onDelete: (id: string) => void;
 }
 
+/* ─────────────────────────────────────────────────────────
+   인쇄 전용 팝업 윈도우 열기
+   — window.print() 대신 새 윈도우를 열어 앱 레이아웃과 완전 분리
+───────────────────────────────────────────────────────── */
+function openPrintWindow(quote: Quote) {
+  const totEur = (quote.items || []).reduce(
+    (s, qi) => s + discountedPrice(qi.snap?.price_eur || 0, qi.discount) * qi.qty, 0
+  );
+  const exchangeRate = quote.exchange_rate || 1700;
+  const totKrw = totEur * exchangeRate;
+  const currency = quote.currency || "BOTH";
+
+  /* ── 품목 행 HTML 생성 ── */
+  const rowsHtml = (quote.items || []).map((qi, i) => {
+    const unit = discountedPrice(qi.snap?.price_eur || 0, qi.discount);
+    const total = unit * qi.qty;
+
+    const eurTotal  = fEur(total);
+    const krwTotal  = fKrw(total, exchangeRate);
+    const imgHtml   = qi.snap?.img
+      ? `<img src="${qi.snap.img}" style="width:36px;height:36px;object-fit:cover;border-radius:4px;" />`
+      : `<div style="width:36px;height:36px;background:#f0f0f0;border-radius:4px;"></div>`;
+
+    const priceHtml =
+      currency === "EUR"  ? `<b>${eurTotal}</b>` :
+      currency === "KRW"  ? `<b>${krwTotal}</b>` :
+      `<b>${eurTotal}</b><br/><span style="color:#999;font-size:10px;">${krwTotal}</span>`;
+
+    return `
+      <tr>
+        <td style="padding:10px 6px;vertical-align:top;color:#aaa;font-size:11px;">${i + 1}</td>
+        <td style="padding:10px 4px;vertical-align:top;">${imgHtml}</td>
+        <td style="padding:10px 8px;vertical-align:top;">
+          <div style="font-size:10px;color:#888;font-weight:600;letter-spacing:0.04em;">${qi.snap?.brand || ""}</div>
+          <div style="font-size:12px;font-weight:700;color:#111;">${qi.snap?.model || ""}</div>
+          ${qi.snap?.code ? `<div style="font-size:10px;color:#aaa;">COD. ${qi.snap.code}</div>` : ""}
+          ${qi.snap?.dims ? `<div style="font-size:10px;color:#aaa;">${qi.snap.dims}</div>` : ""}
+        </td>
+        <td style="padding:10px 8px;vertical-align:top;font-size:11px;color:#555;max-width:90px;">${qi.snap?.finish || ""}</td>
+        <td style="padding:10px 6px;vertical-align:top;text-align:center;font-size:12px;font-weight:700;">${qi.qty}</td>
+        <td style="padding:10px 6px;vertical-align:top;text-align:right;font-size:12px;white-space:nowrap;">${priceHtml}</td>
+      </tr>`;
+  }).join("");
+
+  /* ── 합계 HTML ── */
+  const totalEurHtml = (currency === "BOTH" || currency === "EUR")
+    ? `<div style="text-align:right;">
+         <div style="font-size:11px;color:#999;">합계 EUR</div>
+         <div style="font-size:20px;font-weight:900;color:#111;">${fEur(totEur)}</div>
+       </div>` : "";
+  const totalKrwHtml = (currency === "BOTH" || currency === "KRW")
+    ? `<div style="text-align:right;">
+         <div style="font-size:11px;color:#999;">합계 KRW</div>
+         <div style="font-size:20px;font-weight:900;color:#111;">${fKrw(totKrw, 1)}</div>
+       </div>` : "";
+
+  /* ── Terms HTML ── */
+  const termsHtml = TERMS.map((t, i) => `
+    <li style="display:flex;gap:8px;font-size:10px;color:#666;line-height:1.6;margin-bottom:5px;">
+      <span style="font-weight:700;color:#555;flex-shrink:0;">${i + 1}.</span>
+      <span>${t}</span>
+    </li>`).join("");
+
+  const footerHtml = TERMS_FOOTER.split("\n\n").map(p =>
+    `<p style="font-size:10px;color:#666;line-height:1.7;margin:0 0 6px 0;">${p}</p>`
+  ).join("");
+
+  /* ── 전체 HTML 문서 ── */
+  const html = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ATTD 견적서 — ${quote.title || ""}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body {
+      font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+      color: #111;
+      background: #fff;
+      padding: 40px 48px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    /* ATTD 브랜드 헤더 */
+    .attd-header {
+      padding-bottom: 20px;
+      border-bottom: 2px solid #111;
+      margin-bottom: 24px;
+    }
+    .attd-brand    { font-size: 38px; font-weight: 900; letter-spacing: 0.18em; color: #111; line-height:1; }
+    .attd-sub      { font-size: 13px; font-weight: 300; letter-spacing: 0.08em; color: #666; margin-top: 5px; }
+    .attd-by       { font-size: 11px; letter-spacing: 0.06em; color: #aaa; margin-top: 2px; }
+
+    /* 견적 정보 */
+    .quote-info    { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+    .quote-title   { font-size: 18px; font-weight: 800; color: #111; }
+    .quote-client  { font-size: 13px; color: #555; margin-top: 4px; }
+    .quote-meta    { text-align: right; font-size: 12px; color: #888; line-height: 1.6; }
+
+    /* 품목 테이블 */
+    table          { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+    thead tr       { border-top: 1.5px solid #111; border-bottom: 1.5px solid #111; }
+    th             { padding: 8px 6px; font-size: 11px; font-weight: 700; color: #333; }
+    th:nth-child(1){ text-align:left; width:28px; }
+    th:nth-child(2){ text-align:left; width:44px; }
+    th:nth-child(3){ text-align:left; }
+    th:nth-child(4){ text-align:left; }
+    th:nth-child(5){ text-align:center; width:40px; }
+    th:nth-child(6){ text-align:right; width:110px; }
+    tbody tr       { border-bottom: 1px solid #eee; }
+
+    /* 합계 */
+    .totals        { display: flex; justify-content: flex-end; gap: 32px;
+                     border-top: 2px solid #111; padding-top: 14px; margin-top: 0; margin-bottom: 28px; }
+
+    /* T&C */
+    .tc-section    { border-top: 1px solid #ddd; padding-top: 18px; }
+    .tc-title      { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; color: #444;
+                     text-transform: uppercase; margin-bottom: 10px; }
+    .tc-list       { list-style: none; padding: 0; }
+    .tc-footer     { margin-top: 16px; padding-top: 14px; border-top: 1px solid #eee; }
+
+    /* 인쇄 설정 */
+    @page { size: A4 portrait; margin: 14mm 12mm; }
+    @media print {
+      body { padding: 0; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ATTD 브랜드 타이틀 -->
+  <div class="attd-header">
+    <div class="attd-brand">ATTD</div>
+    <div class="attd-sub">Private Furniture Curation</div>
+    <div class="attd-by">by Chapter Design</div>
+  </div>
+
+  <!-- 견적서 정보 -->
+  <div class="quote-info">
+    <div>
+      <div class="quote-title">${quote.title || "견적서"}</div>
+      ${quote.client ? `<div class="quote-client">고객사: <b>${quote.client}</b></div>` : ""}
+    </div>
+    <div class="quote-meta">
+      ${quote.quote_date ? `<div>발행일: ${quote.quote_date}</div>` : ""}
+      <div>환율: ₩${exchangeRate.toLocaleString()}/€</div>
+    </div>
+  </div>
+
+  <!-- 품목 테이블 -->
+  <table>
+    <thead>
+      <tr>
+        <th>No.</th>
+        <th>사진</th>
+        <th>브랜드 / 모델</th>
+        <th>피니쉬</th>
+        <th style="text-align:center;">수량</th>
+        <th style="text-align:right;">합계</th>
+      </tr>
+    </thead>
+    <tbody>${rowsHtml}</tbody>
+  </table>
+
+  <!-- 합계 -->
+  <div class="totals">
+    ${totalEurHtml}
+    ${totalKrwHtml}
+  </div>
+
+  <!-- Terms & Conditions -->
+  <div class="tc-section">
+    <div class="tc-title">Terms &amp; Conditions</div>
+    <ol class="tc-list">${termsHtml}</ol>
+    <div class="tc-footer">${footerHtml}</div>
+  </div>
+
+  <script>
+    window.onload = function() {
+      window.print();
+    };
+  </script>
+</body>
+</html>`;
+
+  const win = window.open("", "_blank", "width=900,height=1200");
+  if (win) {
+    win.document.write(html);
+    win.document.close();
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   SavedQuotes 컴포넌트
+───────────────────────────────────────────────────────── */
 export default function SavedQuotes({ quotes, onLoad, onDelete }: SavedQuotesProps) {
   const [viewingQuote, setViewingQuote] = useState<Quote | null>(null);
 
-  const openView = (q: Quote) => setViewingQuote(q);
+  const openView  = (q: Quote) => setViewingQuote(q);
   const closeView = () => setViewingQuote(null);
-
-  const handlePrint = () => window.print();
 
   return (
     <>
@@ -53,21 +259,18 @@ export default function SavedQuotes({ quotes, onLoad, onDelete }: SavedQuotesPro
                     <div className="text-xs font-bold text-black mt-1">{fEur(total)}</div>
 
                     <div className="flex gap-1 mt-2">
-                      {/* 보기 */}
                       <button
                         onClick={() => openView(q)}
                         className="flex-1 py-1 text-[10px] font-medium border border-gray-200 rounded hover:bg-gray-100 transition-colors"
                       >
                         보기
                       </button>
-                      {/* 편집 */}
                       <button
                         onClick={() => onLoad(q)}
                         className="flex-1 py-1 text-[10px] font-medium border border-black rounded bg-black text-white hover:bg-gray-800 transition-colors"
                       >
                         편집
                       </button>
-                      {/* 삭제 */}
                       <button
                         onClick={() => onDelete(q.id)}
                         className="px-2 py-1 text-[10px] border border-gray-200 rounded text-gray-400 hover:text-red-500 hover:border-red-300 hover:bg-red-50 transition-colors"
@@ -88,155 +291,131 @@ export default function SavedQuotes({ quotes, onLoad, onDelete }: SavedQuotesPro
       </div>
 
       {/* ══════════════════════════════════════════
-          견적서 보기 모달 (출력 프리뷰)
+          견적서 보기 모달 (화면 미리보기)
           ══════════════════════════════════════════ */}
       {viewingQuote && (
-        <>
-          {/* ── 화면용 오버레이 모달 (no-print) ── */}
-          <div className="fixed inset-0 z-50 flex items-start justify-center no-print" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
-            {/* 배경 딤 */}
-            <div className="absolute inset-0 bg-black/50" onClick={closeView} />
+        <div className="fixed inset-0 z-50 flex items-start justify-center"
+          style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+          {/* 배경 딤 */}
+          <div className="absolute inset-0 bg-black/50" onClick={closeView} />
 
-            {/* 모달 컨테이너 */}
-            <div className="relative bg-white w-full max-w-2xl mx-4 mt-4 mb-4 rounded-2xl shadow-2xl flex flex-col max-h-[calc(100vh-env(safe-area-inset-top,0px)-2rem)]">
+          {/* 모달 */}
+          <div className="relative bg-white w-full max-w-2xl mx-4 mt-4 mb-4 rounded-2xl shadow-2xl flex flex-col"
+            style={{ maxHeight: "calc(100dvh - env(safe-area-inset-top, 0px) - 2rem)" }}>
 
-              {/* 모달 상단 툴바 (화면 전용) */}
-              <div className="flex-shrink-0 flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-white rounded-t-2xl">
-                <span className="text-sm font-semibold text-gray-700">출력 미리보기</span>
-                <div className="flex items-center gap-2">
-                  {/* PDF 저장 / 인쇄 버튼 */}
-                  <button
-                    onClick={handlePrint}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-black text-white text-xs font-semibold rounded-lg hover:bg-gray-800 transition-colors"
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                      <polyline points="6 9 6 2 18 2 18 9" />
-                      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                      <rect x="6" y="14" width="12" height="8" />
-                    </svg>
-                    인쇄 / PDF 저장
-                  </button>
-                  {/* 편집 */}
-                  <button
-                    onClick={() => { onLoad(viewingQuote); closeView(); }}
-                    className="px-3 py-1.5 border border-gray-200 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    편집
-                  </button>
-                  {/* 닫기 */}
-                  <button
-                    onClick={closeView}
-                    className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-black rounded-full hover:bg-gray-100 transition-colors"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              {/* 스크롤 영역 — 실제 출력 프리뷰 */}
-              <div className="flex-1 overflow-y-auto px-1 py-2">
-                <QuotePreview quote={viewingQuote} />
+            {/* 상단 툴바 */}
+            <div className="flex-shrink-0 flex items-center justify-between px-5 py-3 border-b border-gray-100 rounded-t-2xl">
+              <span className="text-sm font-semibold text-gray-700">출력 미리보기</span>
+              <div className="flex items-center gap-2">
+                {/* 인쇄/PDF 버튼 — 새 윈도우로 열어서 정확하게 출력 */}
+                <button
+                  onClick={() => openPrintWindow(viewingQuote)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-black text-white text-xs font-semibold rounded-lg hover:bg-gray-800 transition-colors"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <polyline points="6 9 6 2 18 2 18 9" />
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                    <rect x="6" y="14" width="12" height="8" />
+                  </svg>
+                  인쇄 / PDF 저장
+                </button>
+                {/* 편집 */}
+                <button
+                  onClick={() => { onLoad(viewingQuote); closeView(); }}
+                  className="px-3 py-1.5 border border-gray-200 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  편집
+                </button>
+                {/* 닫기 */}
+                <button onClick={closeView}
+                  className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-black rounded-full hover:bg-gray-100 transition-colors">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
               </div>
             </div>
-          </div>
 
-          {/* ── 인쇄 전용 레이아웃 ── */}
-          {/* print: 클래스로 보이고 화면에서는 숨김 */}
-          <div className="print-only-quote hidden print:block">
-            <QuotePreview quote={viewingQuote} />
+            {/* 스크롤 프리뷰 영역 */}
+            <div className="flex-1 overflow-y-auto">
+              <QuotePreview quote={viewingQuote} />
+            </div>
           </div>
-        </>
+        </div>
       )}
     </>
   );
 }
 
-/* ────────────────────────────────────────────────────────
-   QuotePreview — 화면 & 인쇄 공용 레이아웃
-   ──────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────
+   QuotePreview — 화면용 미리보기 (스크롤 가능)
+   인쇄는 openPrintWindow() 팝업으로 완전 분리
+───────────────────────────────────────────────────────── */
 function QuotePreview({ quote }: { quote: Quote }) {
   const totEur = (quote.items || []).reduce(
     (s, qi) => s + discountedPrice(qi.snap?.price_eur || 0, qi.discount) * qi.qty, 0
   );
   const exchangeRate = quote.exchange_rate || 1700;
-  const totKrw = totEur * exchangeRate;
-  const currency = quote.currency || "BOTH";
+  const totKrw       = totEur * exchangeRate;
+  const currency     = quote.currency || "BOTH";
 
   return (
-    <div className="bg-white text-black px-8 py-8 min-h-[1000px] print:px-12 print:py-10">
+    <div className="bg-white text-black px-8 py-8">
 
-      {/* ── ATTD 브랜드 타이틀 (견적서 최상단 고정) ── */}
-      <div className="mb-8 pb-6 border-b-2 border-black">
-        <div className="text-4xl font-black tracking-[0.2em] text-black">ATTD</div>
-        <div className="text-base font-light tracking-[0.1em] text-gray-600 mt-1">
-          Private Furniture Curation
-        </div>
-        <div className="text-sm tracking-[0.08em] text-gray-400 mt-0.5">
-          by Chapter Design
-        </div>
+      {/* ATTD 브랜드 타이틀 */}
+      <div className="mb-7 pb-5 border-b-2 border-black">
+        <div className="text-4xl font-black tracking-[0.2em]">ATTD</div>
+        <div className="text-sm font-light tracking-[0.08em] text-gray-600 mt-1">Private Furniture Curation</div>
+        <div className="text-xs tracking-[0.06em] text-gray-400 mt-0.5">by Chapter Design</div>
       </div>
 
-      {/* ── 견적서 정보 헤더 ── */}
-      <div className="flex justify-between items-start mb-6">
+      {/* 견적서 정보 */}
+      <div className="flex justify-between items-start mb-5">
         <div>
-          <h2 className="text-xl font-bold text-black">{quote.title || "견적서"}</h2>
-          {quote.client && (
-            <div className="text-sm text-gray-500 mt-1">
-              고객사: <span className="font-medium text-black">{quote.client}</span>
-            </div>
-          )}
+          <div className="text-xl font-bold">{quote.title || "견적서"}</div>
+          {quote.client && <div className="text-sm text-gray-500 mt-1">고객사: <span className="font-semibold text-black">{quote.client}</span></div>}
         </div>
-        <div className="text-right text-sm text-gray-500">
+        <div className="text-right text-xs text-gray-500 leading-relaxed">
           {quote.quote_date && <div>발행일: {quote.quote_date}</div>}
-          <div className="mt-0.5">환율: ₩{exchangeRate.toLocaleString()}/€</div>
+          <div>환율: ₩{exchangeRate.toLocaleString()}/€</div>
         </div>
       </div>
 
-      {/* ── 품목 테이블 ── */}
-      <table className="w-full text-sm border-collapse mb-6">
+      {/* 품목 테이블 */}
+      <table className="w-full text-sm border-collapse mb-0">
         <thead>
-          <tr className="border-y border-black">
-            <th className="py-2 text-left font-semibold text-xs w-7">No.</th>
-            <th className="py-2 w-10 text-left font-semibold text-xs">사진</th>
-            <th className="py-2 text-left font-semibold text-xs">브랜드 / 모델</th>
-            <th className="py-2 text-left font-semibold text-xs">피니쉬</th>
-            <th className="py-2 text-center font-semibold text-xs w-10">수량</th>
-            <th className="py-2 text-right font-semibold text-xs w-28">합계</th>
+          <tr className="border-y-2 border-black">
+            <th className="py-2 text-left font-bold text-xs w-7">No.</th>
+            <th className="py-2 text-left w-11 font-bold text-xs">사진</th>
+            <th className="py-2 text-left font-bold text-xs">브랜드 / 모델</th>
+            <th className="py-2 text-left font-bold text-xs">피니쉬</th>
+            <th className="py-2 text-center font-bold text-xs w-10">수량</th>
+            <th className="py-2 text-right font-bold text-xs w-28">합계</th>
           </tr>
         </thead>
         <tbody>
           {(quote.items || []).map((qi, i) => {
-            const unit = discountedPrice(qi.snap?.price_eur || 0, qi.discount);
+            const unit  = discountedPrice(qi.snap?.price_eur || 0, qi.discount);
             const total = unit * qi.qty;
             return (
               <tr key={qi.itemId} className="border-b border-gray-100">
                 <td className="py-2.5 text-gray-400 text-xs align-top">{i + 1}</td>
                 <td className="py-2.5 pr-2 align-top">
-                  {qi.snap?.img ? (
-                    <img src={qi.snap.img} alt={qi.snap.model} className="w-10 h-10 object-cover rounded" />
-                  ) : (
-                    <div className="w-10 h-10 bg-gray-100 rounded" />
-                  )}
+                  {qi.snap?.img
+                    ? <img src={qi.snap.img} alt={qi.snap.model} className="w-9 h-9 object-cover rounded" />
+                    : <div className="w-9 h-9 bg-gray-100 rounded" />}
                 </td>
                 <td className="py-2.5 align-top">
                   <div className="text-[10px] text-gray-500 font-semibold tracking-wide">{qi.snap?.brand}</div>
-                  <div className="font-semibold text-xs text-black">{qi.snap?.model}</div>
-                  {qi.snap?.code && <div className="text-[10px] text-gray-400">{qi.snap.code}</div>}
+                  <div className="font-bold text-xs text-black">{qi.snap?.model}</div>
+                  {qi.snap?.code && <div className="text-[10px] text-gray-400">COD. {qi.snap.code}</div>}
                   {qi.snap?.dims && <div className="text-[10px] text-gray-400 mt-0.5">{qi.snap.dims}</div>}
                 </td>
-                <td className="py-2.5 text-xs text-gray-500 align-top max-w-[100px] whitespace-pre-line">
-                  {qi.snap?.finish}
-                </td>
-                <td className="py-2.5 text-center text-xs font-semibold align-top">{qi.qty}</td>
+                <td className="py-2.5 text-xs text-gray-500 align-top max-w-[90px] whitespace-pre-line">{qi.snap?.finish}</td>
+                <td className="py-2.5 text-center text-xs font-bold align-top">{qi.qty}</td>
                 <td className="py-2.5 text-right align-top whitespace-nowrap">
-                  {(currency === "BOTH" || currency === "EUR") && (
-                    <div className="font-bold text-xs">{fEur(total)}</div>
-                  )}
-                  {(currency === "BOTH" || currency === "KRW") && (
-                    <div className="text-[10px] text-gray-400">{fKrw(total, exchangeRate)}</div>
-                  )}
+                  {(currency === "BOTH" || currency === "EUR") && <div className="font-bold text-xs">{fEur(total)}</div>}
+                  {(currency === "BOTH" || currency === "KRW") && <div className="text-[10px] text-gray-400">{fKrw(total, exchangeRate)}</div>}
                 </td>
               </tr>
             );
@@ -244,8 +423,8 @@ function QuotePreview({ quote }: { quote: Quote }) {
         </tbody>
       </table>
 
-      {/* ── 합계 ── */}
-      <div className="flex justify-end gap-8 py-4 border-t-2 border-black mb-8">
+      {/* 합계 */}
+      <div className="flex justify-end gap-7 py-4 border-t-2 border-black mb-7">
         {(currency === "BOTH" || currency === "EUR") && (
           <div className="text-right">
             <div className="text-xs text-gray-500 mb-0.5">합계 EUR</div>
@@ -260,22 +439,24 @@ function QuotePreview({ quote }: { quote: Quote }) {
         )}
       </div>
 
-      {/* ── Terms & Conditions ── */}
-      <div className="pt-6 border-t border-gray-200">
-        <h4 className="text-[11px] font-bold text-gray-700 mb-3 tracking-wider uppercase">
+      {/* Terms & Conditions */}
+      <div className="border-t border-gray-200 pt-5">
+        <h4 className="text-[11px] font-extrabold text-gray-600 mb-3 tracking-widest uppercase">
           Terms &amp; Conditions
         </h4>
-        <ol className="space-y-1.5">
+        <ol className="space-y-2">
           {TERMS.map((t, i) => (
             <li key={i} className="flex gap-2 text-[10px] text-gray-500 leading-relaxed">
-              <span className="font-semibold text-gray-600 flex-shrink-0">{i + 1}.</span>
+              <span className="font-bold text-gray-600 flex-shrink-0">{i + 1}.</span>
               <span>{t}</span>
             </li>
           ))}
         </ol>
-        <p className="mt-5 pt-4 border-t border-gray-200 text-[10px] text-gray-500 leading-relaxed font-medium">
-          ATTD는 세계 각국의 프리미엄 브랜드를 고객의 공간에 가장 완성도 높은 방식으로 연결합니다. 모든 제품은 고객님만을 위해 정식 주문 및 수입되는 프라이빗 오더 상품입니다.
-        </p>
+        <div className="mt-5 pt-4 border-t border-gray-200 space-y-2">
+          {TERMS_FOOTER.split("\n\n").map((p, i) => (
+            <p key={i} className="text-[10px] text-gray-500 leading-relaxed">{p}</p>
+          ))}
+        </div>
       </div>
     </div>
   );
