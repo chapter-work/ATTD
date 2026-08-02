@@ -63,7 +63,6 @@ function openPrintWindow(quote: Quote) {
         <td style="padding:10px 8px;vertical-align:top;">
           <div style="font-size:10px;color:#888;font-weight:600;letter-spacing:0.04em;">${qi.snap?.brand || ""}</div>
           <div style="font-size:12px;font-weight:700;color:#111;">${qi.snap?.model || ""}</div>
-          ${qi.snap?.code ? `<div style="font-size:10px;color:#aaa;">COD. ${qi.snap.code}</div>` : ""}
           ${qi.snap?.dims ? `<div style="font-size:10px;color:#aaa;">${qi.snap.dims}</div>` : ""}
         </td>
         <td style="padding:10px 8px;vertical-align:top;font-size:11px;color:#555;max-width:90px;">${qi.snap?.finish || ""}</td>
@@ -144,6 +143,40 @@ function openPrintWindow(quote: Quote) {
     /* 합계 */
     .totals        { display: flex; justify-content: flex-end; gap: 32px;
                      border-top: 2px solid #111; padding-top: 14px; margin-top: 0; margin-bottom: 28px; }
+
+    /* 서명란 */
+    .sign-section {
+      margin-bottom: 32px;
+      padding: 24px 0 0 0;
+      border-top: 2px solid #111;
+    }
+    .sign-title {
+      font-size: 11px; font-weight: 800; letter-spacing: 0.12em;
+      color: #444; text-transform: uppercase; margin-bottom: 20px;
+    }
+    .sign-row {
+      display: flex; gap: 32px;
+    }
+    .sign-box {
+      flex: 1;
+    }
+    .sign-label {
+      font-size: 11px; color: #888; margin-bottom: 8px;
+    }
+    .sign-name-area {
+      font-size: 14px; font-weight: 700; color: #111;
+      padding-bottom: 4px;
+      border-bottom: 1.5px solid #111;
+      min-height: 28px;
+      letter-spacing: 0.02em;
+    }
+    .sign-line-area {
+      min-height: 60px;
+      border-bottom: 1.5px solid #111;
+    }
+    .sign-date {
+      font-size: 11px; color: #aaa; margin-top: 6px;
+    }
 
     /* T&C */
     .tc-section    { border-top: 1px solid #ddd; padding-top: 18px; }
@@ -257,6 +290,23 @@ function openPrintWindow(quote: Quote) {
   <div class="totals">
     ${totalEurHtml}
     ${totalKrwHtml}
+  </div>
+
+  <!-- 서명란 -->
+  <div class="sign-section">
+    <div class="sign-title">Confirmation &amp; Signature</div>
+    <div class="sign-row">
+      <div class="sign-box">
+        <div class="sign-label">고객 성명 Client Name</div>
+        <div class="sign-name-area">${quote.client || ""}</div>
+        <div class="sign-date">위 금액으로 견적에 동의합니다.</div>
+      </div>
+      <div class="sign-box">
+        <div class="sign-label">서명 Signature</div>
+        <div class="sign-line-area"></div>
+        <div class="sign-date">서명일: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 년 &nbsp;&nbsp; 월 &nbsp;&nbsp; 일</div>
+      </div>
+    </div>
   </div>
 
   <!-- Terms & Conditions -->
@@ -460,7 +510,6 @@ function QuotePreview({ quote }: { quote: Quote }) {
                 <td className="py-2.5 align-top">
                   <div className="text-[10px] text-gray-500 font-semibold tracking-wide">{qi.snap?.brand}</div>
                   <div className="font-bold text-xs text-black">{qi.snap?.model}</div>
-                  {qi.snap?.code && <div className="text-[10px] text-gray-400">COD. {qi.snap.code}</div>}
                   {qi.snap?.dims && <div className="text-[10px] text-gray-400 mt-0.5">{qi.snap.dims}</div>}
                 </td>
                 <td className="py-2.5 text-xs text-gray-500 align-top max-w-[90px] whitespace-pre-line">{qi.snap?.finish}</td>
@@ -489,6 +538,29 @@ function QuotePreview({ quote }: { quote: Quote }) {
             <div className="font-black text-xl">{fKrw(totKrw, 1)}</div>
           </div>
         )}
+      </div>
+
+      {/* ── 서명란 ── */}
+      <div className="pt-5 border-t-2 border-black mb-6">
+        <h4 className="text-[11px] font-extrabold text-gray-500 mb-4 tracking-widest uppercase">
+          Confirmation &amp; Signature
+        </h4>
+        <div className="flex gap-6">
+          {/* 고객 성함 */}
+          <div className="flex-1">
+            <div className="text-[11px] text-gray-400 mb-2">고객 성함 Client Name</div>
+            <div className="text-sm font-bold text-black pb-1 border-b-2 border-black min-h-[28px]">
+              {quote.client || ""}
+            </div>
+            <div className="text-[10px] text-gray-400 mt-1.5">위 금액으로 견적에 동의합니다.</div>
+          </div>
+          {/* 서명 */}
+          <div className="flex-1">
+            <div className="text-[11px] text-gray-400 mb-2">서명 Signature</div>
+            <div className="min-h-[52px] border-b-2 border-black" />
+            <div className="text-[10px] text-gray-400 mt-1.5">서명일: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 년 &nbsp;&nbsp; 월 &nbsp;&nbsp; 일</div>
+          </div>
+        </div>
       </div>
 
       {/* Terms & Conditions */}

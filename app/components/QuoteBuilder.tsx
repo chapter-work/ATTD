@@ -255,7 +255,6 @@ export default function QuoteBuilder({
                         <td className="px-3 py-2">
                           <div className="text-[10px] text-gray-400 font-semibold">{qi.snap.brand}</div>
                           <div className="font-semibold text-xs">{qi.snap.model}</div>
-                          {qi.snap.code && <div className="text-[10px] text-gray-400">{qi.snap.code}</div>}
                         </td>
                         <td className="px-3 py-2 text-xs text-gray-500 max-w-[120px] whitespace-pre-line">{qi.snap.dims}</td>
                         <td className="px-3 py-2 text-xs text-gray-500 max-w-[120px] whitespace-pre-line">{qi.snap.finish}</td>
