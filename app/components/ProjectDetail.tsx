@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Project, ProjectItem, ProjectStatus,
   Item, calcProjectItem, calcProjectSummary,
-  fEur, fKrwFull,
+  fEur, fKrwFull, discountedPrice,
 } from "@/lib/supabase";
 
 // ── 유틸 ─────────────────────────────────────────────────
@@ -49,11 +49,12 @@ interface ProjectDetailProps {
 }
 
 // ── 신규 ProjectItem 생성 ─────────────────────────────────
+// price_eur = 할인가 (= 정가 × (1 - 할인율%))
 function makeProjectItem(item: Item, baseMargin: number): ProjectItem {
   return {
     itemId: item.id,
     qty: 1,
-    price_eur: item.price_eur,
+    price_eur: discountedPrice(item.price_eur, item.discount ?? 0), // 할인가
     supply_cost_rate: 20,
     retail_eur: 0,
     sell_margin: baseMargin,
@@ -279,9 +280,12 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
                       </div>
                       <div className="text-[10px] text-gray-400">{item.finish} {item.dims}</div>
                     </div>
-                    <div className="text-xs font-bold text-gray-700 flex-shrink-0">
-                      {fEur(item.price_eur)}
-                    </div>
+                    <div className="text-xs font-bold text-gray-700 flex-shrink-0 text-right">
+                        <div>{fEur(discountedPrice(item.price_eur, item.discount ?? 0))}</div>
+                        {(item.discount ?? 0) > 0 && (
+                          <div className="text-[10px] text-gray-400 line-through">{fEur(item.price_eur)}</div>
+                        )}
+                      </div>
                   </button>
                 ))}
                 {filteredItems.length === 0 && (
@@ -299,7 +303,7 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
                   <tr className="bg-gray-50 border-y border-gray-200">
                     <th className="text-left px-4 py-2 font-semibold text-gray-500 w-[200px]">품목</th>
                     <th className="text-center px-2 py-2 font-semibold text-gray-500 w-12">수량</th>
-                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-24">유럽 기준가<br/><span className="font-normal text-gray-400">EUR</span></th>
+                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-24">유럽 공급가<br/><span className="font-normal text-gray-400">할인가 EUR</span></th>
                     <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">환산 원가<br/><span className="font-normal text-gray-400">× 환율</span></th>
                     <th className="text-center px-2 py-2 font-semibold text-gray-500 w-16">부대비율<br/><span className="font-normal text-gray-400">%</span></th>
                     <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">부대비<br/><span className="font-normal text-gray-400">KRW</span></th>
@@ -337,7 +341,7 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
                           />
                         </td>
 
-                        {/* 유럽 기준가 (입력 가능) */}
+                        {/* 유럽 공급가 (할인가, 입력 가능) */}
                         <td className="px-2 py-2.5 align-top text-right">
                           <input
                             type="number" step="0.01"
@@ -345,6 +349,13 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
                             onChange={e => updateItem(pi.itemId, "price_eur", e.target.value)}
                             className="w-24 text-right border border-gray-200 rounded px-1 py-0.5 text-xs focus:outline-none focus:border-black"
                           />
+                          {/* 참고: 카탈로그 정가 표시 */}
+                          {(pi.snap.discount ?? 0) > 0 && (
+                            <div className="text-[10px] text-gray-400 mt-0.5">
+                              정가 {fEur(pi.snap.price_eur)}
+                              <span className="ml-1 text-blue-500">-{pi.snap.discount}%</span>
+                            </div>
+                          )}
                           <div className="text-[10px] text-gray-400 mt-0.5">
                             × {pi.qty} = {fEur(pi.price_eur * pi.qty)}
                           </div>

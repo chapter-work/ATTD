@@ -57,17 +57,19 @@ export const discountedPrice = (price: number, disc: number) =>
  *
  * DB 필드명(snake_case) → UI 표시명
  * ──────────────────────────────────────────
- * price_eur         → 유럽 기준가 (EUR)
+ * price_eur         → 유럽 공급가 (EUR, 할인가 = 정가 × (1 - 할인율%))
  * supply_cost_rate  → 부대비율 (%) — 기본 20%
  * retail_eur        → 한국 공식 소비자가 (EUR 기준, 입력)
  * sell_margin       → 마진율 (%) — 품목별 오버라이드 가능
  * qty               → 수량
  * snap              → 품목 스냅샷 (Item)
+ *
+ * ※ price_eur 초기값 = snap.price_eur × (1 - snap.discount/100)  [할인가]
  */
 export type ProjectItem = {
   itemId: string;
   qty: number;
-  price_eur: number;        // 유럽 기준가 (EUR) — 스냅샷에서 복사, 수정 가능
+  price_eur: number;        // 유럽 공급가 (EUR, 할인가 기준) — 수정 가능
   supply_cost_rate: number; // 부대비율 (%) ex) 20
   retail_eur: number;       // 한국 공식 소비자가 (EUR)
   sell_margin: number;      // 마진율 (%)
@@ -95,7 +97,7 @@ export type Project = {
 /**
  * 품목 1행 계산 결과
  *
- * cost_krw       환산 원가          = price_eur × exchange_rate
+ * cost_krw       환산 원가          = price_eur(할인가) × exchange_rate
  * supply_cost    부대비             = cost_krw × supply_cost_rate / 100
  * total_cost     총 원가            = cost_krw + supply_cost
  * sell_price     고객 판매가 (KRW)  = total_cost / (1 - sell_margin/100)
