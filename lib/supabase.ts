@@ -71,9 +71,9 @@ export type ProjectItem = {
   qty: number;
   price_eur: number;        // 유럽 공급가 (EUR, 할인가 기준) — 수정 가능
   supply_cost_rate: number; // 부대비율 (%) ex) 20
-  retail_eur: number;       // 한국 공식 소비자가 (EUR)
   sell_margin: number;      // 마진율 (%)
   snap: Item;               // 품목 스냅샷
+  // retail_eur 는 price_eur × (1 + vat/100) 으로 자동 계산 — DB 저장 불필요
 };
 
 export type ProjectStatus = "draft" | "confirmed" | "completed";
@@ -101,7 +101,8 @@ export type Project = {
  * supply_cost    부대비             = cost_krw × supply_cost_rate / 100
  * total_cost     총 원가            = cost_krw + supply_cost
  * sell_price     고객 판매가 (KRW)  = total_cost / (1 - sell_margin/100)
- * retail_krw     한국 공식 소비자가  = retail_eur × exchange_rate
+ * retail_eur     공식 소비자가(EUR) = price_eur × (1 + vat/100)  ← 이탈리아 부가세 22%
+ * retail_krw     공식 소비자가(KRW) = retail_eur × exchange_rate
  * discount_rate  공식 소비자가 대비 할인율 (%) = (1 - sell_price/retail_krw) × 100
  * profit         이익금액 (KRW)     = sell_price - total_cost
  */
@@ -110,6 +111,7 @@ export type ProjectItemCalc = {
   supply_cost: number;
   total_cost: number;
   sell_price: number;
+  retail_eur: number;       // 자동계산: price_eur × (1 + vat/100)
   retail_krw: number;
   discount_rate: number;
   profit: number;
@@ -122,7 +124,11 @@ export type ProjectItemCalc = {
   profit_total: number;
 };
 
-export function calcProjectItem(item: ProjectItem, exchangeRate: number): ProjectItemCalc {
+export function calcProjectItem(
+  item: ProjectItem,
+  exchangeRate: number,
+  vatRate = 22,             // 이탈리아 부가세 기본값 22%
+): ProjectItemCalc {
   const rate = exchangeRate;
   const cost_krw       = item.price_eur * rate;
   const supply_cost    = cost_krw * (item.supply_cost_rate / 100);
@@ -130,7 +136,8 @@ export function calcProjectItem(item: ProjectItem, exchangeRate: number): Projec
   const sell_price     = item.sell_margin >= 100
     ? total_cost
     : total_cost / (1 - item.sell_margin / 100);
-  const retail_krw     = item.retail_eur * rate;
+  const retail_eur     = item.price_eur * (1 + vatRate / 100);
+  const retail_krw     = retail_eur * rate;
   const discount_rate  = retail_krw > 0
     ? (1 - sell_price / retail_krw) * 100
     : 0;
@@ -141,6 +148,7 @@ export function calcProjectItem(item: ProjectItem, exchangeRate: number): Projec
     supply_cost,
     total_cost,
     sell_price,
+    retail_eur,
     retail_krw,
     discount_rate,
     profit,
@@ -169,14 +177,15 @@ export type ProjectSummary = {
 
 export function calcProjectSummary(
   items: ProjectItem[],
-  exchangeRate: number
+  exchangeRate: number,
+  vatRate = 22,
 ): ProjectSummary {
   let total_eur = 0, total_cost_krw = 0, total_supply = 0;
   let total_sell = 0, total_retail = 0, total_profit = 0;
   let item_count = 0;
 
   for (const item of items) {
-    const c = calcProjectItem(item, exchangeRate);
+    const c = calcProjectItem(item, exchangeRate, vatRate);
     total_eur        += item.price_eur * item.qty;
     total_cost_krw   += c.total_cost_total;
     total_supply     += c.supply_cost_total;
