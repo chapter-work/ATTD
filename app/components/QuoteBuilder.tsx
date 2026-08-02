@@ -3,6 +3,16 @@
 import { useState, useEffect } from "react";
 import { Item, Quote, QuoteItem, fEur, fKrw, discountedPrice } from "@/lib/supabase";
 
+const TERMS = [
+  "본 견적은 해외 브랜드의 정품 제품을 기준으로 작성되었습니다.",
+  "계약 완료 후 주문은 즉시 해외 제조사로 진행되며, 모든 제품은 고객을 위한 Order Made 방식으로 제작 또는 발주됩니다. 따라서 계약 완료 후에는 모델, 옵션, 마감, 수량 등의 변경 및 주문 취소가 불가합니다.",
+  "모든 주문은 상품대금 100% 선결제를 원칙으로 하며, 결제 완료 후 해외 발주가 진행됩니다.",
+  "예상 납기는 해외 제조사의 생산 일정, 국제 운송 및 통관 절차에 따라 변동될 수 있으며, 일정 변경 시 신속히 안내드립니다.",
+  "천연 원목, 대리석, 가죽 등 천연 소재는 제품마다 색상, 무늬 및 질감에 자연스러운 차이가 있을 수 있으며, 이는 소재 고유의 특성으로 제품의 하자에 해당하지 않습니다.",
+  "설치 완료 후 제품의 외관 및 수량을 확인한 경우 정상 인도된 것으로 간주하며, 제조상의 하자는 해당 브랜드의 품질보증 기준에 따라 처리됩니다.",
+  "본 견적의 유효기간은 발행일로부터 30일입니다.",
+];
+
 interface QuoteBuilderProps {
   items: Item[];
   exchangeRate: number;
@@ -27,9 +37,13 @@ export default function QuoteBuilder({
     if (editingQuote) {
       setTitle(editingQuote.title || "");
       setClient(editingQuote.client || "");
-      setQuoteDate(editingQuote.quote_date || new Date().toISOString().slice(0,10));
+      setQuoteDate(editingQuote.quote_date || new Date().toISOString().slice(0, 10));
       setCurrency(editingQuote.currency || "BOTH");
       setQuoteItems(editingQuote.items || []);
+    } else {
+      setTitle(""); setClient("");
+      setQuoteDate(new Date().toISOString().slice(0, 10));
+      setCurrency("BOTH"); setQuoteItems([]);
     }
   }, [editingQuote]);
 
@@ -41,7 +55,7 @@ export default function QuoteBuilder({
   const addItem = (item: Item) => {
     const exists = quoteItems.find(qi => qi.itemId === item.id);
     if (exists) {
-      setQuoteItems(prev => prev.map(qi => qi.itemId === item.id ? {...qi, qty: qi.qty + 1} : qi));
+      setQuoteItems(prev => prev.map(qi => qi.itemId === item.id ? { ...qi, qty: qi.qty + 1 } : qi));
     } else {
       setQuoteItems(prev => [...prev, { itemId: item.id, qty: 1, discount: item.discount, snap: item }]);
     }
@@ -49,11 +63,11 @@ export default function QuoteBuilder({
 
   const updateQty = (itemId: string, qty: number) => {
     if (qty < 1) return;
-    setQuoteItems(prev => prev.map(qi => qi.itemId === itemId ? {...qi, qty} : qi));
+    setQuoteItems(prev => prev.map(qi => qi.itemId === itemId ? { ...qi, qty } : qi));
   };
 
   const updateDisc = (itemId: string, discount: number) => {
-    setQuoteItems(prev => prev.map(qi => qi.itemId === itemId ? {...qi, discount} : qi));
+    setQuoteItems(prev => prev.map(qi => qi.itemId === itemId ? { ...qi, discount } : qi));
   };
 
   const removeItem = (itemId: string) => {
@@ -77,14 +91,15 @@ export default function QuoteBuilder({
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 h-full">
-      {/* 좌측: 품목 선택 피커 */}
+
+      {/* ── 좌측: 품목 피커 ── */}
       <div className="lg:w-64 flex-shrink-0">
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100">
             <h3 className="font-semibold text-sm mb-2">품목 선택</h3>
             <div className="relative">
               <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
               <input
                 type="text" value={pickerSearch}
@@ -94,38 +109,57 @@ export default function QuoteBuilder({
               />
             </div>
           </div>
+
           <div className="overflow-y-auto max-h-80 lg:max-h-[calc(100vh-280px)]">
-            {filteredPicker.map(item => {
-              const dp = discountedPrice(item.price_eur, item.discount);
-              const isAdded = quoteItems.some(qi => qi.itemId === item.id);
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => addItem(item)}
-                  className={`w-full text-left px-4 py-2.5 flex items-center gap-2.5 border-b border-gray-50 hover:bg-gray-50 transition-colors ${isAdded ? "bg-black/5" : ""}`}
-                >
-                  {item.img ? (
-                    <img src={item.img} alt={item.model} className="w-9 h-9 object-cover rounded flex-shrink-0" />
-                  ) : (
-                    <div className="w-9 h-9 bg-gray-100 rounded flex-shrink-0" />
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-semibold text-gray-400">{item.brand}</div>
-                    <div className="text-xs font-medium text-black truncate">{item.model}</div>
-                    <div className="text-[10px] font-bold text-black">{fEur(dp)}</div>
-                  </div>
-                  {isAdded && <span className="text-[10px] text-green-600 font-bold flex-shrink-0">추가됨</span>}
-                </button>
-              );
-            })}
+            {/* 검색 결과 없음 안내 */}
+            {filteredPicker.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+                <svg className="text-gray-200 mb-2" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <p className="text-xs text-gray-400 font-medium">
+                  {pickerSearch ? `"${pickerSearch}" 검색 결과가 없습니다` : "등록된 품목이 없습니다"}
+                </p>
+                {pickerSearch && (
+                  <button onClick={() => setPickerSearch("")} className="mt-2 text-[10px] text-gray-400 underline">
+                    검색 초기화
+                  </button>
+                )}
+              </div>
+            ) : (
+              filteredPicker.map(item => {
+                const dp = discountedPrice(item.price_eur, item.discount);
+                const isAdded = quoteItems.some(qi => qi.itemId === item.id);
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => addItem(item)}
+                    className={`w-full text-left px-4 py-2.5 flex items-center gap-2.5 border-b border-gray-50 hover:bg-gray-50 transition-colors ${isAdded ? "bg-black/5" : ""}`}
+                  >
+                    {item.img ? (
+                      <img src={item.img} alt={item.model} className="w-9 h-9 object-cover rounded flex-shrink-0" />
+                    ) : (
+                      <div className="w-9 h-9 bg-gray-100 rounded flex-shrink-0" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[10px] font-semibold text-gray-400">{item.brand}</div>
+                      <div className="text-xs font-medium text-black truncate">{item.model}</div>
+                      <div className="text-[10px] font-bold text-black">{fEur(dp)}</div>
+                    </div>
+                    {isAdded && <span className="text-[10px] text-green-600 font-bold flex-shrink-0">추가됨</span>}
+                  </button>
+                );
+              })
+            )}
           </div>
         </div>
       </div>
 
-      {/* 중앙: 견적 빌더 */}
+      {/* ── 중앙: 견적 빌더 ── */}
       <div className="flex-1 min-w-0">
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden print-area">
-          {/* 견적서 메타 */}
+
+          {/* 견적서 메타 (화면 전용) */}
           <div className="px-5 py-4 border-b border-gray-100 no-print">
             <div className="flex flex-wrap gap-2 items-center justify-between mb-3">
               <input
@@ -184,7 +218,7 @@ export default function QuoteBuilder({
                     <th className="px-3 py-2 text-right font-medium">단가</th>
                     <th className="px-3 py-2 text-center font-medium no-print">할인율</th>
                     <th className="px-3 py-2 text-right font-medium">합계</th>
-                    <th className="px-2 py-2 no-print"></th>
+                    <th className="px-2 py-2 no-print w-8"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -233,10 +267,18 @@ export default function QuoteBuilder({
                           {(currency === "BOTH" || currency === "EUR") && <div className="font-bold text-xs">{fEur(total)}</div>}
                           {(currency === "BOTH" || currency === "KRW") && <div className="text-[10px] text-gray-400">{fKrw(total, exchangeRate)}</div>}
                         </td>
+                        {/* 삭제 버튼 — 명확한 휴지통 아이콘 + 빨간 hover */}
                         <td className="px-2 py-2 no-print">
-                          <button onClick={() => removeItem(qi.itemId)} className="text-gray-200 hover:text-red-400 transition-colors">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                          <button
+                            onClick={() => removeItem(qi.itemId)}
+                            title="항목 삭제"
+                            className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 text-gray-400 hover:border-red-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                          >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                              <path d="M10 11v6M14 11v6" />
+                              <path d="M9 6V4h6v2" />
                             </svg>
                           </button>
                         </td>
@@ -250,7 +292,7 @@ export default function QuoteBuilder({
 
           {/* 합계 푸터 */}
           {quoteItems.length > 0 && (
-            <div className="px-5 py-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3">
+            <div className="px-5 py-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3 no-print">
               <div className="flex flex-wrap gap-4">
                 {(currency === "BOTH" || currency === "EUR") && (
                   <div>
@@ -264,7 +306,7 @@ export default function QuoteBuilder({
                     <div className="font-bold text-base">{fKrw(totKrw, 1)}</div>
                   </div>
                 )}
-                <div className="no-print">
+                <div>
                   <span className="text-xs text-gray-400">환율 ₩/€</span>
                   <div>
                     <input
@@ -276,11 +318,50 @@ export default function QuoteBuilder({
                 </div>
               </div>
               <button onClick={handlePrint}
-                className="no-print px-4 py-2 border border-gray-200 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+                className="px-4 py-2 border border-gray-200 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
                 인쇄 / PDF
               </button>
             </div>
           )}
+
+          {/* 인쇄용 합계 */}
+          {quoteItems.length > 0 && (
+            <div className="hidden print:block px-8 py-4 border-t border-gray-200">
+              <div className="flex justify-end gap-8">
+                {(currency === "BOTH" || currency === "EUR") && (
+                  <div className="text-right">
+                    <div className="text-xs text-gray-500">합계 EUR</div>
+                    <div className="font-bold text-base">{fEur(totEur)}</div>
+                  </div>
+                )}
+                {(currency === "BOTH" || currency === "KRW") && (
+                  <div className="text-right">
+                    <div className="text-xs text-gray-500">합계 KRW</div>
+                    <div className="font-bold text-base">{fKrw(totKrw, 1)}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── Terms & Conditions (항상 표시, 인쇄 포함) ── */}
+          <div className="px-5 py-6 border-t border-gray-100 bg-gray-50/60">
+            <h4 className="text-[11px] font-bold text-gray-700 mb-3 tracking-wider uppercase">
+              Terms &amp; Conditions
+            </h4>
+            <ol className="space-y-2">
+              {TERMS.map((t, i) => (
+                <li key={i} className="flex gap-2 text-[10px] text-gray-500 leading-relaxed">
+                  <span className="font-semibold text-gray-600 flex-shrink-0">{i + 1}.</span>
+                  <span>{t}</span>
+                </li>
+              ))}
+            </ol>
+            <p className="mt-5 pt-4 border-t border-gray-200 text-[10px] text-gray-500 leading-relaxed font-medium">
+              ATTD는 세계 각국의 프리미엄 브랜드를 고객의 공간에 가장 완성도 높은 방식으로 연결합니다. 모든 제품은 고객님만을 위해 정식 주문 및 수입되는 프라이빗 오더 상품입니다.
+            </p>
+          </div>
+
         </div>
       </div>
     </div>

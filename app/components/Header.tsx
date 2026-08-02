@@ -21,7 +21,7 @@ export default function Header({ activeTab, onTabChange, syncStatus, onAddItem }
     "오프라인";
 
   return (
-    <header className="bg-[#111] text-white sticky top-0 z-40 safe-top">
+    <header className="bg-[#111] text-white sticky top-0 z-40" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
       <div className="flex items-center justify-between px-4 h-12">
         {/* 로고 */}
         <div className="flex items-center gap-2">
@@ -66,8 +66,6 @@ export default function Header({ activeTab, onTabChange, syncStatus, onAddItem }
           )}
         </div>
       </div>
-
-      {/* 모바일 하단 탭바는 별도 컴포넌트 */}
     </header>
   );
 }
