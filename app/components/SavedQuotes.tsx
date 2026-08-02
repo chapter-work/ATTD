@@ -26,6 +26,7 @@ interface SavedQuotesProps {
   quotes: Quote[];
   onLoad: (quote: Quote) => void;
   onDelete: (id: string) => void;
+  compact?: boolean; // QuoteBuilder 내 인라인 모드
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -324,7 +325,7 @@ function openPrintWindow(quote: Quote) {
 /* ─────────────────────────────────────────────────────────
    SavedQuotes 컴포넌트
 ───────────────────────────────────────────────────────── */
-export default function SavedQuotes({ quotes, onLoad, onDelete }: SavedQuotesProps) {
+export default function SavedQuotes({ quotes, onLoad, onDelete, compact }: SavedQuotesProps) {
   const [viewingQuote, setViewingQuote] = useState<Quote | null>(null);
 
   const openView  = (q: Quote) => setViewingQuote(q);
@@ -333,12 +334,14 @@ export default function SavedQuotes({ quotes, onLoad, onDelete }: SavedQuotesPro
   return (
     <>
       {/* ── 저장된 견적서 목록 ── */}
-      <div className="lg:w-64 flex-shrink-0">
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100">
-            <h3 className="font-semibold text-sm">저장된 견적서</h3>
-          </div>
-          <div className="overflow-y-auto max-h-80 lg:max-h-[calc(100vh-280px)]">
+      <div className={compact ? "" : "lg:w-64 flex-shrink-0"}>
+        <div className={compact ? "" : "bg-white rounded-xl border border-gray-100 overflow-hidden"}>
+          {!compact && (
+            <div className="px-4 py-3 border-b border-gray-100">
+              <h3 className="font-semibold text-sm">저장된 견적서</h3>
+            </div>
+          )}
+          <div className={compact ? "" : "overflow-y-auto max-h-80 lg:max-h-[calc(100vh-280px)]"}>
             {quotes.length === 0 ? (
               <div className="px-4 py-8 text-center text-gray-400 text-xs">
                 저장된 견적서가 없습니다

@@ -39,9 +39,10 @@ interface SubHeaderProps {
   onTabChange: (tab: Tab) => void;
   onAddItem?: () => void;
   onNewProject?: () => void;
+  onNewQuote?: () => void;
 }
 
-export function SubHeader({ activeTab, onTabChange, onAddItem, onNewProject }: SubHeaderProps) {
+export function SubHeader({ activeTab, onTabChange, onAddItem, onNewProject, onNewQuote }: SubHeaderProps) {
   const tabs: { key: Tab; label: string }[] = [
     { key: "catalog",  label: "상품관리" },
     { key: "projects", label: "프로젝트" },
@@ -83,6 +84,14 @@ export function SubHeader({ activeTab, onTabChange, onAddItem, onNewProject }: S
             className="flex items-center gap-1 px-3 py-1.5 bg-black text-white text-xs font-semibold rounded hover:bg-gray-800 transition-colors"
           >
             <span className="text-sm leading-none">+</span> 프로젝트
+          </button>
+        )}
+        {activeTab === "quotes" && onNewQuote && (
+          <button
+            onClick={onNewQuote}
+            className="flex items-center gap-1 px-3 py-1.5 bg-black text-white text-xs font-semibold rounded hover:bg-gray-800 transition-colors"
+          >
+            <span className="text-sm leading-none">+</span> 견적서
           </button>
         )}
       </div>

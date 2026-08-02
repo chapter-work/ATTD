@@ -3,11 +3,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase, Item, Quote, Project } from "@/lib/supabase";
 import Header, { SubHeader } from "@/app/components/Header";
-import BottomNav from "@/app/components/BottomNav";
 import CatalogTable from "@/app/components/CatalogTable";
 import ItemModal from "@/app/components/ItemModal";
 import QuoteBuilder from "@/app/components/QuoteBuilder";
-import SavedQuotes from "@/app/components/SavedQuotes";
 import ProjectList from "@/app/components/ProjectList";
 import ProjectDetail from "@/app/components/ProjectDetail";
 
@@ -186,6 +184,7 @@ export default function Home() {
           setSelectedProject(null);
           setShowProjectDetail(true);
         }}
+        onNewQuote={() => setEditingQuote(null)}
       />
 
       <main className="flex-1 overflow-hidden">
@@ -281,31 +280,21 @@ export default function Home() {
         </div>
 
         {/* ── 고객 견적서 ── */}
-        <div className={`h-full overflow-auto p-4 pb-24 lg:pb-4 ${tab === "quotes" ? "" : "hidden"}`}>
-          <div className="flex flex-col lg:flex-row gap-4">
-            <QuoteBuilder
-              items={items}
-              exchangeRate={exchangeRate}
-              onExchangeRateChange={setExchangeRate}
-              onSave={handleSaveQuote}
-              editingQuote={editingQuote}
-              onNewQuote={() => setEditingQuote(null)}
-            />
-            <SavedQuotes
-              quotes={quotes}
-              onLoad={setEditingQuote}
-              onDelete={handleDeleteQuote}
-            />
-          </div>
+        <div className={`h-full overflow-auto ${tab === "quotes" ? "" : "hidden"}`}>
+          <QuoteBuilder
+            items={items}
+            exchangeRate={exchangeRate}
+            onExchangeRateChange={setExchangeRate}
+            onSave={handleSaveQuote}
+            editingQuote={editingQuote}
+            onNewQuote={() => setEditingQuote(null)}
+            quotes={quotes}
+            onLoadQuote={setEditingQuote}
+            onDeleteQuote={handleDeleteQuote}
+          />
         </div>
 
       </main>
-
-      {/* 모바일 하단 탭 */}
-      <BottomNav activeTab={tab} onTabChange={(t) => {
-        setTab(t);
-        if (t !== "projects") setShowProjectDetail(false);
-      }} />
 
       {/* 품목 등록/수정 모달 */}
       <ItemModal
