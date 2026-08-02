@@ -73,16 +73,21 @@ function openPrintWindow(quote: Quote) {
   }).join("");
 
   /* ── 합계 HTML ── */
-  const totalEurHtml = (currency === "BOTH" || currency === "EUR")
-    ? `<div style="display:flex;align-items:flex-end;gap:8px;">
-         <div class="total-label" style="padding-bottom:2px;">합계</div>
-         <div class="total-value">${fEur(totEur)}</div>
-       </div>` : "";
-  const totalKrwHtml = (currency === "BOTH" || currency === "KRW")
-    ? `<div style="display:flex;align-items:flex-end;gap:8px;">
-         <div class="total-label" style="padding-bottom:2px;">합계</div>
-         <div class="total-value">${fKrw(totKrw, 1)}</div>
-       </div>` : "";
+  const totalHtml =
+    currency === "KRW"
+      ? `<div style="display:flex;align-items:flex-end;gap:8px;">
+           <div class="total-label" style="padding-bottom:2px;">합계</div>
+           <div class="total-value">${fKrw(totKrw, 1)}</div>
+         </div>`
+      : currency === "EUR"
+      ? `<div style="display:flex;align-items:flex-end;gap:8px;">
+           <div class="total-label" style="padding-bottom:2px;">합계</div>
+           <div class="total-value">${fEur(totEur)}</div>
+         </div>`
+      : `<div style="display:flex;align-items:flex-end;gap:8px;">
+           <div class="total-label" style="padding-bottom:2px;">합계</div>
+           <div class="total-value">${fEur(totEur)}<span style="font-weight:400;color:#999;font-size:11px;margin-left:8px;">${fKrw(totKrw, 1)}</span></div>
+         </div>`;
 
   /* ── Terms HTML ── */
   const termsHtml = TERMS.map((t, i) => `
@@ -149,14 +154,10 @@ function openPrintWindow(quote: Quote) {
     .totals .total-label { font-size: 11px; color: #999; text-align: right; line-height:1; }
     .totals .total-value { font-size: 13px; font-weight: 700; color: #111; text-align: right; line-height:1; }
 
-    /* 서명란 — 줄 없이 타이틀만, 3칸 1/3 균등 */
+    /* 서명란 — 3칸 1/3 균등 */
     .sign-section {
       margin-bottom: 32px;
       padding: 22px 0 0 0;
-    }
-    .sign-title {
-      font-size: 11px; font-weight: 800; letter-spacing: 0.12em;
-      color: #444; text-transform: uppercase; margin-bottom: 18px;
     }
     .sign-row {
       display: flex; gap: 20px; align-items: flex-end;
@@ -165,7 +166,8 @@ function openPrintWindow(quote: Quote) {
     .sign-box-name,
     .sign-box-sign  { flex: 0 0 calc(33.33% - 14px); width: calc(33.33% - 14px); }
     .sign-label {
-      font-size: 10px; color: #999; margin-bottom: 10px; letter-spacing: 0.04em;
+      font-size: 9px; color: #aaa; margin-bottom: 12px;
+      letter-spacing: 0.14em; font-weight: 600; text-transform: uppercase;
     }
     .sign-line {
       min-height: 40px;
@@ -257,11 +259,10 @@ function openPrintWindow(quote: Quote) {
   <div class="quote-info">
     <div>
       <div class="quote-title">${quote.title || "견적서"}</div>
-      ${quote.client ? `<div class="quote-client">고객사: <b>${quote.client}</b></div>` : ""}
+      ${quote.client ? `<div class="quote-client"><b>${quote.client}</b></div>` : ""}
     </div>
     <div class="quote-meta">
-      ${quote.quote_date ? `<div>발행일: ${quote.quote_date}</div>` : ""}
-      <div>환율: ₩${exchangeRate.toLocaleString()}/€</div>
+      ${quote.quote_date ? `<div>${quote.quote_date}</div>` : ""}
     </div>
   </div>
 
@@ -282,24 +283,22 @@ function openPrintWindow(quote: Quote) {
 
   <!-- 합계 -->
   <div class="totals">
-    ${totalEurHtml}
-    ${totalKrwHtml}
+    ${totalHtml}
   </div>
 
-  <!-- 서명란: 날짜 / 고객이름 / 서명  한 행 -->
+  <!-- 서명란 -->
   <div class="sign-section">
-    <div class="sign-title">Confirmation &amp; Signature</div>
     <div class="sign-row">
       <div class="sign-box-date">
-        <div class="sign-label">날짜 Date</div>
+        <div class="sign-label">DATE</div>
         <div class="sign-line"></div>
       </div>
       <div class="sign-box-name">
-        <div class="sign-label">고객 성명 Client Name</div>
+        <div class="sign-label">NAME</div>
         <div class="sign-line"></div>
       </div>
       <div class="sign-box-sign">
-        <div class="sign-label">서명 Signature</div>
+        <div class="sign-label">SIGNATURE</div>
         <div class="sign-line"></div>
       </div>
     </div>
@@ -473,11 +472,10 @@ function QuotePreview({ quote }: { quote: Quote }) {
       <div className="flex justify-between items-start mb-5">
         <div>
           <div className="text-xl font-bold">{quote.title || "견적서"}</div>
-          {quote.client && <div className="text-sm text-gray-500 mt-1">고객사: <span className="font-semibold text-black">{quote.client}</span></div>}
+          {quote.client && <div className="text-sm font-semibold text-black mt-1">{quote.client}</div>}
         </div>
-        <div className="text-right text-xs text-gray-500 leading-relaxed">
-          {quote.quote_date && <div>발행일: {quote.quote_date}</div>}
-          <div>환율: ₩{exchangeRate.toLocaleString()}/€</div>
+        <div className="text-right text-xs text-gray-500">
+          {quote.quote_date && <div>{quote.quote_date}</div>}
         </div>
       </div>
 
@@ -513,8 +511,14 @@ function QuotePreview({ quote }: { quote: Quote }) {
                 <td className="py-2.5 text-xs text-gray-500 align-top max-w-[90px] whitespace-pre-line">{qi.snap?.finish}</td>
                 <td className="py-2.5 text-center text-xs font-bold align-top">{qi.qty}</td>
                 <td className="py-2.5 text-right align-top whitespace-nowrap">
-                  {(currency === "BOTH" || currency === "EUR") && <div className="font-bold text-xs">{fEur(total)}</div>}
-                  {(currency === "BOTH" || currency === "KRW") && <div className="text-[10px] text-gray-400">{fKrw(total, exchangeRate)}</div>}
+                  {currency === "KRW"
+                    ? <div className="font-bold text-xs">{fKrw(total, exchangeRate)}</div>
+                    : currency === "EUR"
+                    ? <div className="font-bold text-xs">{fEur(total)}</div>
+                    : <>
+                        <div className="font-bold text-xs">{fEur(total)}</div>
+                        <div className="text-[10px] text-gray-400">{fKrw(total, exchangeRate)}</div>
+                      </>}
                 </td>
               </tr>
             );
@@ -522,43 +526,33 @@ function QuotePreview({ quote }: { quote: Quote }) {
         </tbody>
       </table>
 
-      {/* 합계 — 굵은 2px 선, 라벨+금액 flex 가로 정렬 */}
-      <div className="flex justify-end gap-7 mb-6"
+      {/* 합계 */}
+      <div className="flex justify-end mb-6"
         style={{borderTop: "2px solid #111", borderBottom: "2px solid #111", padding: "10px 0"}}>
-        {(currency === "BOTH" || currency === "EUR") && (
-          <div style={{display:"flex", alignItems:"flex-end", gap:"8px"}}>
-            <div className="text-[11px] text-gray-400" style={{paddingBottom:"2px"}}>합계</div>
-            <div className="text-xs font-bold text-black">{fEur(totEur)}</div>
+        <div style={{display:"flex", alignItems:"flex-end", gap:"8px"}}>
+          <div className="text-[11px] text-gray-400" style={{paddingBottom:"2px"}}>합계</div>
+          <div className="text-sm font-bold text-black">
+            {currency === "KRW" ? fKrw(totKrw, 1)
+             : currency === "EUR" ? fEur(totEur)
+             : <>{fEur(totEur)}<span className="font-normal text-gray-400 ml-2 text-[11px]">{fKrw(totKrw, 1)}</span></>}
           </div>
-        )}
-        {(currency === "BOTH" || currency === "KRW") && (
-          <div style={{display:"flex", alignItems:"flex-end", gap:"8px"}}>
-            <div className="text-[11px] text-gray-400" style={{paddingBottom:"2px"}}>합계</div>
-            <div className="text-xs font-bold text-black">{fKrw(totKrw, 1)}</div>
-          </div>
-        )}
+        </div>
       </div>
 
-      {/* ── 서명란: 1/3씩 균등  ── */}
+      {/* 서명란 */}
       <div className="pt-5 mb-6">
-        <h4 className="text-[11px] font-extrabold text-gray-500 mb-4 tracking-widest uppercase">
-          Confirmation &amp; Signature
-        </h4>
         <div className="flex items-end" style={{gap: "20px"}}>
-          {/* 납짜 */}
           <div style={{flex: "0 0 calc(33.33% - 14px)", width: "calc(33.33% - 14px)"}}>
-            <div className="text-[10px] text-gray-400 mb-2.5 tracking-wide">날짜 Date</div>
-            <div className="min-h-[38px]" style={{borderBottom: "1.5px solid #111"}} />
+            <div className="text-[10px] text-gray-400 mb-3 font-medium tracking-widest uppercase">Date</div>
+            <div className="min-h-[40px]" style={{borderBottom: "1.5px solid #111"}} />
           </div>
-          {/* 고객 이름 */}
           <div style={{flex: "0 0 calc(33.33% - 14px)", width: "calc(33.33% - 14px)"}}>
-            <div className="text-[10px] text-gray-400 mb-2.5 tracking-wide">고객 성명 Client Name</div>
-            <div className="min-h-[38px]" style={{borderBottom: "1.5px solid #111"}} />
+            <div className="text-[10px] text-gray-400 mb-3 font-medium tracking-widest uppercase">Name</div>
+            <div className="min-h-[40px]" style={{borderBottom: "1.5px solid #111"}} />
           </div>
-          {/* 서명 */}
           <div style={{flex: "0 0 calc(33.33% - 14px)", width: "calc(33.33% - 14px)"}}>
-            <div className="text-[10px] text-gray-400 mb-2.5 tracking-wide">서명 Signature</div>
-            <div className="min-h-[38px]" style={{borderBottom: "1.5px solid #111"}} />
+            <div className="text-[10px] text-gray-400 mb-3 font-medium tracking-widest uppercase">Signature</div>
+            <div className="min-h-[40px]" style={{borderBottom: "1.5px solid #111"}} />
           </div>
         </div>
       </div>

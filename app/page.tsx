@@ -191,9 +191,10 @@ export default function Home() {
 
         {/* ── 상품관리 ── */}
         <div className={`h-full flex flex-col ${tab === "catalog" ? "" : "hidden"}`}>
-          {/* 검색/필터 바 */}
-          <div className="bg-white border-b border-gray-100 px-4 py-3 flex flex-wrap gap-2 no-print">
-            <div className="relative flex-1 min-w-[160px]">
+          {/* 검색/필터 바 — 2행 구조 */}
+          <div className="bg-white border-b border-gray-100 px-4 pt-2.5 pb-2 no-print flex flex-col gap-2">
+            {/* 1행: 검색 */}
+            <div className="relative">
               <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
               </svg>
@@ -204,17 +205,20 @@ export default function Home() {
                 className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-black transition-colors"
               />
             </div>
-            <select value={filterBrand} onChange={e => setFilterBrand(e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-black bg-white">
-              <option value="">전체 브랜드</option>
-              {brands.map(b => <option key={b} value={b}>{b}</option>)}
-            </select>
-            <select value={filterCat} onChange={e => setFilterCat(e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-black bg-white">
-              <option value="">전체 카테고리</option>
-              {categories.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <span className="text-xs text-gray-400 self-center">{filteredItems.length}개</span>
+            {/* 2행: 브랜드 / 카테고리 / 개수 */}
+            <div className="flex gap-2 items-center">
+              <select value={filterBrand} onChange={e => setFilterBrand(e.target.value)}
+                className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-black bg-white">
+                <option value="">전체 브랜드</option>
+                {brands.map(b => <option key={b} value={b}>{b}</option>)}
+              </select>
+              <select value={filterCat} onChange={e => setFilterCat(e.target.value)}
+                className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-black bg-white">
+                <option value="">전체 카테고리</option>
+                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <span className="text-xs text-gray-400 flex-shrink-0">{filteredItems.length}개</span>
+            </div>
           </div>
 
           <div className="flex-1 overflow-auto">

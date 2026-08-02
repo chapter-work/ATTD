@@ -23,8 +23,13 @@ export default function Header({ syncStatus }: HeaderProps) {
       style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
     >
       <div className="flex items-center px-4 h-11">
-        {/* 로고 */}
-        <span className="font-bold text-base tracking-widest">ATTD</span>
+        {/* 로고 — 클릭 시 새로고침 */}
+        <button
+          onClick={() => window.location.reload()}
+          className="font-bold text-base tracking-widest hover:opacity-70 transition-opacity"
+        >
+          ATTD
+        </button>
         <span className={`ml-2 w-2 h-2 rounded-full ${statusColor}`} title={statusText} />
         <span className="ml-1.5 text-[10px] text-white/40 hidden sm:inline">{statusText}</span>
       </div>
