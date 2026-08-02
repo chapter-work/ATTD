@@ -73,14 +73,14 @@ function openPrintWindow(quote: Quote) {
 
   /* ── 합계 HTML ── */
   const totalEurHtml = (currency === "BOTH" || currency === "EUR")
-    ? `<div style="text-align:right;">
-         <div style="font-size:11px;color:#999;">합계 EUR</div>
-         <div style="font-size:20px;font-weight:900;color:#111;">${fEur(totEur)}</div>
+    ? `<div>
+         <div class="total-label">합계 EUR</div>
+         <div class="total-value">${fEur(totEur)}</div>
        </div>` : "";
   const totalKrwHtml = (currency === "BOTH" || currency === "KRW")
-    ? `<div style="text-align:right;">
-         <div style="font-size:11px;color:#999;">합계 KRW</div>
-         <div style="font-size:20px;font-weight:900;color:#111;">${fKrw(totKrw, 1)}</div>
+    ? `<div>
+         <div class="total-label">합계 KRW</div>
+         <div class="total-value">${fKrw(totKrw, 1)}</div>
        </div>` : "";
 
   /* ── Terms HTML ── */
@@ -114,13 +114,14 @@ function openPrintWindow(quote: Quote) {
 
     /* ATTD 브랜드 헤더 */
     .attd-header {
-      padding-bottom: 20px;
+      padding-top: 28px;
+      padding-bottom: 22px;
       border-bottom: 2px solid #111;
-      margin-bottom: 24px;
+      margin-bottom: 28px;
     }
     .attd-brand    { font-size: 38px; font-weight: 900; letter-spacing: 0.18em; color: #111; line-height:1; }
-    .attd-sub      { font-size: 13px; font-weight: 300; letter-spacing: 0.08em; color: #666; margin-top: 5px; }
-    .attd-by       { font-size: 11px; letter-spacing: 0.06em; color: #aaa; margin-top: 2px; }
+    .attd-sub      { font-size: 13px; font-weight: 300; letter-spacing: 0.08em; color: #666; margin-top: 6px; }
+    .attd-by       { font-size: 11px; letter-spacing: 0.06em; color: #aaa; margin-top: 3px; }
 
     /* 견적 정보 */
     .quote-info    { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
@@ -140,42 +141,37 @@ function openPrintWindow(quote: Quote) {
     th:nth-child(6){ text-align:right; width:110px; }
     tbody tr       { border-bottom: 1px solid #eee; }
 
-    /* 합계 */
+    /* 합계 — 단가와 동일한 크기 */
     .totals        { display: flex; justify-content: flex-end; gap: 32px;
-                     border-top: 2px solid #111; padding-top: 14px; margin-top: 0; margin-bottom: 28px; }
+                     border-top: 2px solid #111; padding-top: 12px; margin-top: 0; margin-bottom: 28px; }
+    .totals .total-label { font-size: 11px; color: #999; margin-bottom: 2px; text-align: right; }
+    .totals .total-value { font-size: 13px; font-weight: 700; color: #111; text-align: right; }
 
-    /* 서명란 */
+    /* 서명란 — 날짜 / 고객이름 / 서명  한 행 */
     .sign-section {
       margin-bottom: 32px;
-      padding: 24px 0 0 0;
+      padding: 22px 0 0 0;
       border-top: 2px solid #111;
     }
     .sign-title {
       font-size: 11px; font-weight: 800; letter-spacing: 0.12em;
-      color: #444; text-transform: uppercase; margin-bottom: 20px;
+      color: #444; text-transform: uppercase; margin-bottom: 18px;
     }
     .sign-row {
-      display: flex; gap: 32px;
+      display: flex; gap: 20px; align-items: flex-end;
     }
-    .sign-box {
-      flex: 1;
-    }
+    /* 날짜 칸 — 좁게 */
+    .sign-box-date  { flex: 1.2; }
+    /* 이름 칸 — 중간 */
+    .sign-box-name  { flex: 1.4; }
+    /* 서명 칸 — 넓게 */
+    .sign-box-sign  { flex: 2; }
     .sign-label {
-      font-size: 11px; color: #888; margin-bottom: 8px;
+      font-size: 10px; color: #999; margin-bottom: 10px; letter-spacing: 0.04em;
     }
-    .sign-name-area {
-      font-size: 14px; font-weight: 700; color: #111;
-      padding-bottom: 4px;
+    .sign-line {
+      min-height: 40px;
       border-bottom: 1.5px solid #111;
-      min-height: 28px;
-      letter-spacing: 0.02em;
-    }
-    .sign-line-area {
-      min-height: 60px;
-      border-bottom: 1.5px solid #111;
-    }
-    .sign-date {
-      font-size: 11px; color: #aaa; margin-top: 6px;
     }
 
     /* T&C */
@@ -292,19 +288,21 @@ function openPrintWindow(quote: Quote) {
     ${totalKrwHtml}
   </div>
 
-  <!-- 서명란 -->
+  <!-- 서명란: 날짜 / 고객이름 / 서명  한 행 -->
   <div class="sign-section">
     <div class="sign-title">Confirmation &amp; Signature</div>
     <div class="sign-row">
-      <div class="sign-box">
-        <div class="sign-label">고객 성명 Client Name</div>
-        <div class="sign-name-area">${quote.client || ""}</div>
-        <div class="sign-date">위 금액으로 견적에 동의합니다.</div>
+      <div class="sign-box-date">
+        <div class="sign-label">날짜 Date</div>
+        <div class="sign-line"></div>
       </div>
-      <div class="sign-box">
+      <div class="sign-box-name">
+        <div class="sign-label">고객 성명 Client Name</div>
+        <div class="sign-line"></div>
+      </div>
+      <div class="sign-box-sign">
         <div class="sign-label">서명 Signature</div>
-        <div class="sign-line-area"></div>
-        <div class="sign-date">서명일: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 년 &nbsp;&nbsp; 월 &nbsp;&nbsp; 일</div>
+        <div class="sign-line"></div>
       </div>
     </div>
   </div>
@@ -464,10 +462,10 @@ function QuotePreview({ quote }: { quote: Quote }) {
   return (
     <div className="bg-white text-black px-8 py-8">
 
-      {/* ATTD 브랜드 타이틀 */}
-      <div className="mb-7 pb-5 border-b-2 border-black">
+      {/* ATTD 브랜드 타이틀 — 상단 여백 추가 */}
+      <div className="mt-5 mb-7 pb-5 border-b-2 border-black">
         <div className="text-4xl font-black tracking-[0.2em]">ATTD</div>
-        <div className="text-sm font-light tracking-[0.08em] text-gray-600 mt-1">Private Furniture Curation</div>
+        <div className="text-sm font-light tracking-[0.08em] text-gray-600 mt-1.5">Private Furniture Curation</div>
         <div className="text-xs tracking-[0.06em] text-gray-400 mt-0.5">by Chapter Design</div>
       </div>
 
@@ -524,41 +522,42 @@ function QuotePreview({ quote }: { quote: Quote }) {
         </tbody>
       </table>
 
-      {/* 합계 */}
-      <div className="flex justify-end gap-7 py-4 border-t-2 border-black mb-7">
+      {/* 합계 — 단가와 동일한 크기 */}
+      <div className="flex justify-end gap-7 py-3 border-t-2 border-black mb-6">
         {(currency === "BOTH" || currency === "EUR") && (
           <div className="text-right">
-            <div className="text-xs text-gray-500 mb-0.5">합계 EUR</div>
-            <div className="font-black text-xl">{fEur(totEur)}</div>
+            <div className="text-[11px] text-gray-400 mb-0.5">합계 EUR</div>
+            <div className="text-xs font-bold text-black">{fEur(totEur)}</div>
           </div>
         )}
         {(currency === "BOTH" || currency === "KRW") && (
           <div className="text-right">
-            <div className="text-xs text-gray-500 mb-0.5">합계 KRW</div>
-            <div className="font-black text-xl">{fKrw(totKrw, 1)}</div>
+            <div className="text-[11px] text-gray-400 mb-0.5">합계 KRW</div>
+            <div className="text-xs font-bold text-black">{fKrw(totKrw, 1)}</div>
           </div>
         )}
       </div>
 
-      {/* ── 서명란 ── */}
+      {/* ── 서명란: 날짜 / 고객이름 / 서명  한 행 ── */}
       <div className="pt-5 border-t-2 border-black mb-6">
         <h4 className="text-[11px] font-extrabold text-gray-500 mb-4 tracking-widest uppercase">
           Confirmation &amp; Signature
         </h4>
-        <div className="flex gap-6">
-          {/* 고객 성함 */}
-          <div className="flex-1">
-            <div className="text-[11px] text-gray-400 mb-2">고객 성함 Client Name</div>
-            <div className="text-sm font-bold text-black pb-1 border-b-2 border-black min-h-[28px]">
-              {quote.client || ""}
-            </div>
-            <div className="text-[10px] text-gray-400 mt-1.5">위 금액으로 견적에 동의합니다.</div>
+        <div className="flex gap-5 items-end">
+          {/* 날짜 */}
+          <div style={{flex: "1.2"}}>
+            <div className="text-[10px] text-gray-400 mb-2.5 tracking-wide">날짜 Date</div>
+            <div className="min-h-[38px] border-b-2 border-black" />
+          </div>
+          {/* 고객 이름 */}
+          <div style={{flex: "1.4"}}>
+            <div className="text-[10px] text-gray-400 mb-2.5 tracking-wide">고객 성명 Client Name</div>
+            <div className="min-h-[38px] border-b-2 border-black" />
           </div>
           {/* 서명 */}
-          <div className="flex-1">
-            <div className="text-[11px] text-gray-400 mb-2">서명 Signature</div>
-            <div className="min-h-[52px] border-b-2 border-black" />
-            <div className="text-[10px] text-gray-400 mt-1.5">서명일: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 년 &nbsp;&nbsp; 월 &nbsp;&nbsp; 일</div>
+          <div style={{flex: "2"}}>
+            <div className="text-[10px] text-gray-400 mb-2.5 tracking-wide">서명 Signature</div>
+            <div className="min-h-[38px] border-b-2 border-black" />
           </div>
         </div>
       </div>
