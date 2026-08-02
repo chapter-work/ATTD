@@ -175,7 +175,7 @@ export default function Home() {
         </div>
 
         {/* ── 견적서 ── */}
-        <div className={`h-full overflow-auto p-4 ${tab === "quotes" ? "" : "hidden"}`}>
+        <div className={`h-full overflow-auto p-4 pb-24 lg:pb-4 ${tab === "quotes" ? "" : "hidden"}`}>
           <div className="flex flex-col lg:flex-row gap-4">
             <QuoteBuilder
               items={items}

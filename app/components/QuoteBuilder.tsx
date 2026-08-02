@@ -190,12 +190,23 @@ export default function QuoteBuilder({
             </div>
           </div>
 
-          {/* 인쇄용 헤더 */}
-          <div className="hidden print:block px-8 pt-8 pb-4">
-            <h1 className="text-2xl font-bold">{title || "견적서"}</h1>
-            {client && <p className="text-sm text-gray-500 mt-1">고객사: {client}</p>}
-            {quoteDate && <p className="text-sm text-gray-500">날짜: {quoteDate}</p>}
-            <hr className="mt-4 border-gray-200" />
+          {/* 인쇄용 헤더 — ATTD 고정 타이틀 + 견적 정보 */}
+          <div className="hidden print:block px-8 pt-10 pb-4">
+            {/* ATTD 브랜드 타이틀 */}
+            <div className="mb-6 pb-5 border-b-2 border-black">
+              <div className="text-3xl font-black tracking-[0.15em] text-black">ATTD</div>
+              <div className="text-sm font-light tracking-[0.08em] text-gray-600 mt-0.5">Private Furniture Curation</div>
+              <div className="text-xs tracking-[0.06em] text-gray-400 mt-0.5">by Chapter Design</div>
+            </div>
+            {/* 견적서 정보 */}
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h1 className="text-xl font-bold">{title || "견적서"}</h1>
+                {client && <p className="text-sm text-gray-500 mt-1">고객사: {client}</p>}
+              </div>
+              {quoteDate && <p className="text-sm text-gray-500 mt-1">날짜: {quoteDate}</p>}
+            </div>
+            <hr className="border-gray-200" />
           </div>
 
           {/* 견적 아이템 테이블 */}

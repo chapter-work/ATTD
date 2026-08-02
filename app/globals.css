@@ -26,9 +26,62 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #e4e4e4; border-radius: 99px; }
 
-/* 인쇄 */
+/* ══════════════════════════════════════════
+   인쇄 / PDF 저장 스타일
+   ══════════════════════════════════════════ */
 @media print {
+  /* 화면 전용 요소 모두 숨김 */
   .no-print { display: none !important; }
-  body { background: white; }
-  .print-area { box-shadow: none !important; }
+
+  /* 앱 레이아웃 — 헤더, 하단 탭바, 검색/필터바 숨김 */
+  header,
+  nav,
+  footer,
+  [class*="BottomNav"],
+  [data-print-hide="true"] {
+    display: none !important;
+  }
+
+  /* 모달 오버레이 배경 숨김 */
+  .fixed.inset-0.bg-black\/50 {
+    display: none !important;
+  }
+
+  /* 화면용 모달 컨테이너 숨김 (no-print 클래스 적용) */
+  .no-print {
+    display: none !important;
+  }
+
+  /* 인쇄 전용 견적서만 표시 */
+  .print-only-quote {
+    display: block !important;
+    position: static !important;
+  }
+
+  /* 배경 흰색 */
+  body {
+    background: white !important;
+  }
+
+  /* 그림자 제거 */
+  .print-area {
+    box-shadow: none !important;
+  }
+
+  /* 페이지 여백 */
+  @page {
+    margin: 15mm 12mm;
+  }
+
+  /* 이미지 강제 출력 */
+  img {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* 색상 강제 출력 */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }
