@@ -145,8 +145,9 @@ export function calcProjectItem(
     ? total_cost
     : total_cost / (1 - item.sell_margin / 100);
   const sell_price_total = sell_price * item.qty;
-  // 공식 소비자가: 받은 유럽 공급가(VAT 제외)에 이탈리아 VAT 22% 추가 역산
-  const retail_eur      = item.price_eur * 1.22;
+  // 공식 소비자가: 유럽 리테일가(정가, snap.price_eur) × 1.22 × 환율
+  // item.price_eur 는 할인가(공급가)이므로 정가인 snap.price_eur 사용
+  const retail_eur      = item.snap.price_eur * 1.22;
   const retail_krw      = retail_eur * rate;
   // 할인율: 국내 소비자가 vs 판매단가 (입력값 있을 때만)
   const domestic_retail = item.domestic_retail ?? 0;

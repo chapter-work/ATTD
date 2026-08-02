@@ -476,7 +476,7 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
                         {/* 공식 소비자가 (EUR×1.22→KRW, 자동) */}
                         <td className="px-2 py-2.5 align-top text-right">
                           <div className="text-gray-700 font-medium">{fKrwFull(c.retail_krw)}</div>
-                          <div className="text-[10px] text-gray-400 mt-0.5">€{Math.round(c.retail_eur).toLocaleString()} × 1.22</div>
+                          <div className="text-[10px] text-gray-400 mt-0.5">리테일 €{Math.round(pi.snap.price_eur).toLocaleString()} × 1.22</div>
                           {pi.qty > 1 && (
                             <div className="text-[10px] text-gray-400 mt-0.5">합계 {fKrwFull(c.retail_krw_total)}</div>
                           )}
