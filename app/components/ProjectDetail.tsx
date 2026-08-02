@@ -330,9 +330,10 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
               <table className="w-full text-xs border-collapse" style={{ minWidth: "980px" }}>
                 <thead>
                   <tr className="bg-gray-50 border-y border-gray-200">
+                    <th className="text-center px-2 py-2 font-semibold text-gray-500 w-8">#</th>
                     <th className="text-left px-4 py-2 font-semibold text-gray-500 w-[260px]">품목</th>
                     <th className="text-center px-2 py-2 font-semibold text-gray-500 w-12">수량</th>
-                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-32">유럽 공급가<br/><span className="font-normal text-gray-400">할인가 · EUR</span></th>
+                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-32">유럽 공급가<br/><span className="font-normal text-gray-400">VAT22% 제외 · EUR</span></th>
                     <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">환산 원가<br/><span className="font-normal text-gray-400">× 환율</span></th>
                     <th className="text-center px-2 py-2 font-semibold text-gray-500 w-16">부대비율<br/><span className="font-normal text-gray-400">%</span></th>
                     <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">부대비<br/><span className="font-normal text-gray-400">KRW</span></th>
@@ -347,10 +348,14 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {projItems.map((pi) => {
+                  {projItems.map((pi, idx) => {
                     const c = calcProjectItem(pi, exchangeRate, vatRate); // vatRate = 국내 부가세 (기본 10%)
                     return (
                       <tr key={pi.itemId} className="hover:bg-gray-50 transition-colors">
+                        {/* 번호 */}
+                        <td className="px-2 py-2.5 align-top text-center">
+                          <span className="text-[11px] font-semibold text-gray-400 tabular-nums">{idx + 1}</span>
+                        </td>
                         {/* 품목 — 사진 + 4행 정보 */}
                         <td className="px-3 py-2.5 align-top">
                           <div className="flex items-start gap-2">
@@ -401,24 +406,27 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
 
                         {/* 유럽 공급가 — 1행: 합계(수량반영), 2행: 단가 입력 */}
                         <td className="px-2 py-2.5 align-top text-right">
-                          {/* 1행: 수량 합계 EUR */}
-                          <div className="text-xs font-semibold text-gray-800">
-                            €{Math.round(pi.price_eur * pi.qty).toLocaleString()}
-                          </div>
-                          {/* 2행: 단가 입력 + 리테일가 참고 */}
-                          <div className="flex items-center justify-end gap-1 mt-0.5">
+                          {/* 1행: 단가 입력 (VAT제외 할인가, 소수점 2자리) */}
+                          <div className="flex items-center justify-end gap-1">
                             <input
-                              type="number" step="1" min="0"
-                              value={Math.round(pi.price_eur)}
+                              type="number" step="0.01" min="0"
+                              value={pi.price_eur.toFixed(2)}
                               onChange={e => updateItem(pi.itemId, "price_eur", e.target.value)}
-                              className="w-20 text-right border border-gray-200 rounded px-1 py-0.5 text-[10px] text-gray-500 focus:outline-none focus:border-black"
+                              className="w-20 text-right border border-gray-200 rounded px-1 py-0.5 text-xs font-semibold text-gray-800 focus:outline-none focus:border-black"
                             />
                             <span className="text-[10px] text-gray-400">€</span>
                           </div>
+                          {/* 2행: 리테일가 + 할인율 참고 */}
                           {(pi.snap.discount ?? 0) > 0 && (
                             <div className="text-[10px] text-gray-400 mt-0.5 text-right">
-                              리테일 €{Math.round(pi.snap.price_eur)}
+                              리테일 €{pi.snap.price_eur.toFixed(2)}
                               <span className="ml-1 text-blue-500">-{pi.snap.discount}%</span>
+                            </div>
+                          )}
+                          {/* 수량 > 1 일 때 합계 EUR 표시 */}
+                          {pi.qty > 1 && (
+                            <div className="text-[10px] text-gray-400 mt-0.5 text-right">
+                              합계 €{(pi.price_eur * pi.qty).toFixed(2)}
                             </div>
                           )}
                         </td>
