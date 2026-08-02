@@ -73,13 +73,13 @@ function openPrintWindow(quote: Quote) {
 
   /* ── 합계 HTML ── */
   const totalEurHtml = (currency === "BOTH" || currency === "EUR")
-    ? `<div>
-         <div class="total-label">합계 EUR</div>
+    ? `<div style="display:flex;align-items:flex-end;gap:8px;">
+         <div class="total-label" style="padding-bottom:2px;">합계</div>
          <div class="total-value">${fEur(totEur)}</div>
        </div>` : "";
   const totalKrwHtml = (currency === "BOTH" || currency === "KRW")
-    ? `<div>
-         <div class="total-label">합계 KRW</div>
+    ? `<div style="display:flex;align-items:flex-end;gap:8px;">
+         <div class="total-label" style="padding-bottom:2px;">합계</div>
          <div class="total-value">${fKrw(totKrw, 1)}</div>
        </div>` : "";
 
@@ -141,18 +141,17 @@ function openPrintWindow(quote: Quote) {
     th:nth-child(6){ text-align:right; width:110px; }
     tbody tr       { border-bottom: 1px solid #eee; }
 
-    /* 합계 — 테이블 헤더와 동일한 1.5px 선 */
+    /* 합계 — 굵은 2px 선, 레이블+금액 가로 정렬 */
     .totals        { display: flex; justify-content: flex-end; gap: 32px;
-                     border-top: 1.5px solid #111; border-bottom: 1.5px solid #111;
+                     border-top: 2px solid #111; border-bottom: 2px solid #111;
                      padding: 10px 0; margin-top: 0; margin-bottom: 28px; }
-    .totals .total-label { font-size: 11px; color: #999; margin-bottom: 2px; text-align: right; }
-    .totals .total-value { font-size: 13px; font-weight: 700; color: #111; text-align: right; }
+    .totals .total-label { font-size: 11px; color: #999; text-align: right; line-height:1; }
+    .totals .total-value { font-size: 13px; font-weight: 700; color: #111; text-align: right; line-height:1; }
 
-    /* 서명란 — 날짜 / 고객이름 / 서명  1/3씩 균등 */
+    /* 서명란 — 줄 없이 타이틀만, 3칸 1/3 균등 */
     .sign-section {
       margin-bottom: 32px;
       padding: 22px 0 0 0;
-      border-top: 1.5px solid #111;
     }
     .sign-title {
       font-size: 11px; font-weight: 800; letter-spacing: 0.12em;
@@ -172,8 +171,8 @@ function openPrintWindow(quote: Quote) {
       border-bottom: 1.5px solid #111;
     }
 
-    /* T&C */
-    .tc-section    { border-top: 1px solid #ddd; padding-top: 18px; }
+    /* T&C — 위 줄 제거 */
+    .tc-section    { padding-top: 4px; }
     .tc-title      { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; color: #444;
                      text-transform: uppercase; margin-bottom: 10px; }
     .tc-list       { list-style: none; padding: 0; }
@@ -520,25 +519,25 @@ function QuotePreview({ quote }: { quote: Quote }) {
         </tbody>
       </table>
 
-      {/* 합계 — 테이블 헤더와 동일한 1.5px 선 */}
+      {/* 합계 — 굵은 2px 선, 라벨+금액 flex 가로 정렬 */}
       <div className="flex justify-end gap-7 mb-6"
-        style={{borderTop: "1.5px solid #111", borderBottom: "1.5px solid #111", padding: "10px 0"}}>
+        style={{borderTop: "2px solid #111", borderBottom: "2px solid #111", padding: "10px 0"}}>
         {(currency === "BOTH" || currency === "EUR") && (
-          <div className="text-right">
-            <div className="text-[11px] text-gray-400 mb-0.5">합계 EUR</div>
+          <div style={{display:"flex", alignItems:"flex-end", gap:"8px"}}>
+            <div className="text-[11px] text-gray-400" style={{paddingBottom:"2px"}}>합계</div>
             <div className="text-xs font-bold text-black">{fEur(totEur)}</div>
           </div>
         )}
         {(currency === "BOTH" || currency === "KRW") && (
-          <div className="text-right">
-            <div className="text-[11px] text-gray-400 mb-0.5">합계 KRW</div>
+          <div style={{display:"flex", alignItems:"flex-end", gap:"8px"}}>
+            <div className="text-[11px] text-gray-400" style={{paddingBottom:"2px"}}>합계</div>
             <div className="text-xs font-bold text-black">{fKrw(totKrw, 1)}</div>
           </div>
         )}
       </div>
 
       {/* ── 서명란: 1/3씩 균등  ── */}
-      <div className="pt-5 mb-6" style={{borderTop: "1.5px solid #111"}}>
+      <div className="pt-5 mb-6">
         <h4 className="text-[11px] font-extrabold text-gray-500 mb-4 tracking-widest uppercase">
           Confirmation &amp; Signature
         </h4>
@@ -562,7 +561,7 @@ function QuotePreview({ quote }: { quote: Quote }) {
       </div>
 
       {/* Terms & Conditions */}
-      <div className="border-t border-gray-200 pt-5">
+      <div className="pt-1">
         <h4 className="text-[11px] font-extrabold text-gray-600 mb-3 tracking-widest uppercase">
           Terms &amp; Conditions
         </h4>
