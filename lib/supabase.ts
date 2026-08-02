@@ -69,11 +69,13 @@ export const discountedPrice = (price: number, disc: number) =>
 export type ProjectItem = {
   itemId: string;
   qty: number;
-  price_eur: number;        // 유럽 공급가 (EUR, 할인가 기준) — 수정 가능
-  supply_cost_rate: number; // 부대비율 (%) ex) 20
-  sell_margin: number;      // 마진율 (%)
-  snap: Item;               // 품목 스냅샷
-  // retail_eur 는 price_eur × (1 + vat/100) 으로 자동 계산 — DB 저장 불필요
+  price_eur: number;          // 유럽 공급가 (EUR, 할인가 기준) — 수정 가능
+  supply_cost_rate: number;   // 부대비율 (%) ex) 20
+  sell_margin: number;        // 마진율 (%)
+  domestic_retail: number;    // 국내 소비자가 (KRW, 직접 입력) — 0이면 미입력
+  snap: Item;                 // 품목 스냅샷
+  // retail_eur = price_eur × 1.22  (이탈리아 리테일가 역산, 자동계산)
+  // domestic_vat = (cost_krw + supply_cost) × 10%  (국내 수입 부가세, 자동계산)
 };
 
 export type ProjectStatus = "draft" | "confirmed" | "completed";
@@ -97,29 +99,34 @@ export type Project = {
 /**
  * 품목 1행 계산 결과
  *
- * cost_krw       환산 원가          = price_eur(할인가) × exchange_rate
- * supply_cost    부대비             = cost_krw × supply_cost_rate / 100
- * total_cost     총 원가            = cost_krw + supply_cost
- * sell_price     고객 판매가 (KRW)  = total_cost / (1 - sell_margin/100)
- * retail_eur     공식 소비자가(EUR) = price_eur × (1 + vat/100)  ← 이탈리아 부가세 22%
- * retail_krw     공식 소비자가(KRW) = retail_eur × exchange_rate
- * discount_rate  공식 소비자가 대비 할인율 (%) = (1 - sell_price/retail_krw) × 100
- * profit         이익금액 (KRW)     = sell_price - total_cost
+ * cost_krw          환산 원가           = price_eur(할인가) × exchange_rate
+ * supply_cost       부대비              = cost_krw × supply_cost_rate / 100
+ * total_cost        총 원가             = cost_krw + supply_cost
+ * domestic_vat      국내 수입 부가세    = total_cost × 10%  (수입 시 납부)
+ * sell_price        고객판매단가 (KRW)  = total_cost / (1 - sell_margin/100)
+ * sell_price_total  판매 합계           = sell_price × qty
+ * retail_eur        공식 소비자가 EUR   = price_eur × 1.22  (이탈리아 리테일가 역산)
+ * retail_krw        공식 소비자가 KRW   = retail_eur × exchange_rate
+ * domestic_retail   국내 소비자가 KRW   = item.domestic_retail (직접 입력)
+ * discount_rate     할인율 vs 국내소비자가 (%) = (1 - sell_price/domestic_retail) × 100
+ * profit            이익금액 (KRW)      = sell_price - total_cost
  */
 export type ProjectItemCalc = {
   cost_krw: number;
   supply_cost: number;
   total_cost: number;
-  sell_price: number;
-  retail_eur: number;       // 자동계산: price_eur × (1 + vat/100)
-  retail_krw: number;
-  discount_rate: number;
-  profit: number;
-  // 수량 반영
+  domestic_vat: number;       // 국내 수입 부가세 (total_cost × 10%)
+  sell_price: number;         // 고객판매단가 (1개)
+  sell_price_total: number;   // 판매 합계 (× qty)
+  retail_eur: number;         // 공식 소비자가 EUR (price_eur × 1.22)
+  retail_krw: number;         // 공식 소비자가 KRW
+  discount_rate: number;      // 국내소비자가 대비 할인율 (%)
+  profit: number;             // 이익금액 (1개)
+  // 수량 반영 합계
   cost_krw_total: number;
   supply_cost_total: number;
   total_cost_total: number;
-  sell_price_total: number;
+  domestic_vat_total: number;
   retail_krw_total: number;
   profit_total: number;
 };
@@ -127,37 +134,44 @@ export type ProjectItemCalc = {
 export function calcProjectItem(
   item: ProjectItem,
   exchangeRate: number,
-  vatRate = 22,             // 이탈리아 부가세 기본값 22%
+  domesticVatRate = 10,   // 국내 수입 부가세 10%
 ): ProjectItemCalc {
-  const rate = exchangeRate;
-  const cost_krw       = item.price_eur * rate;
-  const supply_cost    = cost_krw * (item.supply_cost_rate / 100);
-  const total_cost     = cost_krw + supply_cost;
-  const sell_price     = item.sell_margin >= 100
+  const rate            = exchangeRate;
+  const cost_krw        = item.price_eur * rate;
+  const supply_cost     = cost_krw * (item.supply_cost_rate / 100);
+  const total_cost      = cost_krw + supply_cost;
+  const domestic_vat    = total_cost * (domesticVatRate / 100);
+  const sell_price      = item.sell_margin >= 100
     ? total_cost
     : total_cost / (1 - item.sell_margin / 100);
-  const retail_eur     = item.price_eur * (1 + vatRate / 100);
-  const retail_krw     = retail_eur * rate;
-  const discount_rate  = retail_krw > 0
-    ? (1 - sell_price / retail_krw) * 100
+  const sell_price_total = sell_price * item.qty;
+  // 공식 소비자가: 받은 유럽 공급가(VAT 제외)에 이탈리아 VAT 22% 추가 역산
+  const retail_eur      = item.price_eur * 1.22;
+  const retail_krw      = retail_eur * rate;
+  // 할인율: 국내 소비자가 vs 판매단가 (입력값 있을 때만)
+  const domestic_retail = item.domestic_retail ?? 0;
+  const discount_rate   = domestic_retail > 0
+    ? (1 - sell_price / domestic_retail) * 100
     : 0;
-  const profit         = sell_price - total_cost;
+  const profit          = sell_price - total_cost;
 
   return {
     cost_krw,
     supply_cost,
     total_cost,
+    domestic_vat,
     sell_price,
+    sell_price_total,
     retail_eur,
     retail_krw,
     discount_rate,
     profit,
-    cost_krw_total:    cost_krw    * item.qty,
-    supply_cost_total: supply_cost * item.qty,
-    total_cost_total:  total_cost  * item.qty,
-    sell_price_total:  sell_price  * item.qty,
-    retail_krw_total:  retail_krw  * item.qty,
-    profit_total:      profit      * item.qty,
+    cost_krw_total:       cost_krw    * item.qty,
+    supply_cost_total:    supply_cost * item.qty,
+    total_cost_total:     total_cost  * item.qty,
+    domestic_vat_total:   domestic_vat * item.qty,
+    retail_krw_total:     retail_krw  * item.qty,
+    profit_total:         profit      * item.qty,
   };
 }
 
@@ -178,7 +192,7 @@ export type ProjectSummary = {
 export function calcProjectSummary(
   items: ProjectItem[],
   exchangeRate: number,
-  vatRate = 22,
+  vatRate = 10,   // 국내 수입 부가세 10%
 ): ProjectSummary {
   let total_eur = 0, total_cost_krw = 0, total_supply = 0;
   let total_sell = 0, total_retail = 0, total_profit = 0;

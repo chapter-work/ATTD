@@ -57,6 +57,7 @@ function makeProjectItem(item: Item, baseMargin: number): ProjectItem {
     price_eur: discountedPrice(item.price_eur, item.discount ?? 0), // 할인가
     supply_cost_rate: 20,
     sell_margin: baseMargin,
+    domestic_retail: 0,   // 국내 소비자가 (KRW, 직접 입력) — 0이면 미입력
     snap: item,
   };
 }
@@ -149,7 +150,7 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
     setSaving(false);
   };
 
-  // ── 계산 — vatRate 전달 ─────────────────────────────────
+  // ── 계산 — domesticVatRate 전달 ─────────────────────────────────
   const summary = calcProjectSummary(projItems, exchangeRate, vatRate);
 
   // ── 기본 마진율 일괄적용 ───────────────────────────────
@@ -221,7 +222,7 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
             <InlineInput label="고객명" value={client} onChange={setClient} />
             <InlineInput label="견적일" value={projectDate} onChange={setProjectDate} type="date" />
             <InlineInput label="환율 (KRW/EUR)" value={exchangeRate} onChange={v => setExchangeRate(parseFloat(v) || 1700)} type="number" suffix="₩" />
-            <InlineInput label="이탈리아 VAT" value={vatRate} onChange={v => setVatRate(parseFloat(v) || 22)} type="number" suffix="%" />
+            <InlineInput label="국내 부가세 (수입 시)" value={vatRate} onChange={v => setVatRate(parseFloat(v) || 10)} type="number" suffix="%" />
             <div className="flex flex-col gap-0.5">
               <label className="text-[10px] text-gray-400 font-medium tracking-wide uppercase">기본 마진율</label>
               <div className="flex items-center gap-1">
@@ -337,8 +338,10 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
                     <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">부대비<br/><span className="font-normal text-gray-400">KRW</span></th>
                     <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">총 원가<br/><span className="font-normal text-gray-400">KRW</span></th>
                     <th className="text-center px-2 py-2 font-semibold text-gray-500 w-16">마진율<br/><span className="font-normal text-gray-400">%</span></th>
-                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">고객 판매가<br/><span className="font-normal text-gray-400">KRW</span></th>
-                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">공식 소비자가<br/><span className="font-normal text-gray-400">EUR ×(1+VAT%) → KRW</span></th>
+                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">고객판매단가<br/><span className="font-normal text-gray-400">단가 KRW</span></th>
+                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">합계<br/><span className="font-normal text-gray-400">단가×수량 KRW</span></th>
+                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">국내 소비자가<br/><span className="font-normal text-gray-400">KRW 직접입력</span></th>
+                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">공식 소비자가<br/><span className="font-normal text-gray-400">EUR×1.22 → KRW</span></th>
                     <th className="text-center px-2 py-2 font-semibold text-gray-500 w-16">할인율<br/><span className="font-normal text-gray-400">%</span></th>
                     <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">이익금액<br/><span className="font-normal text-gray-400">KRW</span></th>
                     <th className="px-2 py-2 w-8"></th>
@@ -346,7 +349,7 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {projItems.map((pi) => {
-                    const c = calcProjectItem(pi, exchangeRate, vatRate);
+                    const c = calcProjectItem(pi, exchangeRate, vatRate); // vatRate = 국내 부가세 (기본 10%)
                     return (
                       <tr key={pi.itemId} className="hover:bg-gray-50 transition-colors">
                         {/* 품목명 */}
@@ -438,24 +441,50 @@ export default function ProjectDetail({ project, items, onSave, onClose }: Proje
                           />
                         </td>
 
-                        {/* 고객 판매가 (자동) */}
+                        {/* 고객판매단가 (1개, 자동) */}
                         <td className="px-2 py-2.5 align-top text-right">
                           <div className="font-bold text-black">{fKrwFull(c.sell_price)}</div>
-                          <div className="text-[10px] text-gray-400 mt-0.5">수량 합계 {fKrwFull(c.sell_price_total)}</div>
                         </td>
 
-                        {/* 공식 소비자가 (VAT 자동계산) */}
+                        {/* 합계 (단가×수량, 자동) */}
                         <td className="px-2 py-2.5 align-top text-right">
-                          <div className="text-gray-700 font-medium">{fKrwFull(c.retail_krw)}</div>
-                          <div className="text-[10px] text-gray-400 mt-0.5">€{Math.round(c.retail_eur).toLocaleString()} +VAT {vatRate}%</div>
+                          <div className="font-semibold text-gray-800">{fKrwFull(c.sell_price_total)}</div>
                           {pi.qty > 1 && (
-                            <div className="text-[10px] text-gray-400 mt-0.5">수량 합계 {fKrwFull(c.retail_krw_total)}</div>
+                            <div className="text-[10px] text-gray-400 mt-0.5">{pi.qty}개 × {fKrwFull(c.sell_price)}</div>
                           )}
                         </td>
 
-                        {/* 할인율 (자동) */}
+                        {/* 국내 소비자가 (KRW 직접 입력) */}
+                        <td className="px-2 py-2.5 align-top text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <input
+                              type="number" step="1000" min="0"
+                              value={pi.domestic_retail || ""}
+                              placeholder="0"
+                              onChange={e => updateItem(pi.itemId, "domestic_retail", e.target.value)}
+                              className="w-24 text-right border border-gray-200 rounded px-1 py-0.5 text-xs focus:outline-none focus:border-black"
+                            />
+                            <span className="text-[10px] text-gray-400">₩</span>
+                          </div>
+                          {pi.domestic_retail > 0 && (
+                            <div className="text-[10px] text-gray-400 mt-0.5 text-right">
+                              {fKrwFull(pi.domestic_retail)}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* 공식 소비자가 (EUR×1.22→KRW, 자동) */}
+                        <td className="px-2 py-2.5 align-top text-right">
+                          <div className="text-gray-700 font-medium">{fKrwFull(c.retail_krw)}</div>
+                          <div className="text-[10px] text-gray-400 mt-0.5">€{Math.round(c.retail_eur).toLocaleString()} × 1.22</div>
+                          {pi.qty > 1 && (
+                            <div className="text-[10px] text-gray-400 mt-0.5">합계 {fKrwFull(c.retail_krw_total)}</div>
+                          )}
+                        </td>
+
+                        {/* 할인율 (국내 소비자가 대비, 자동) */}
                         <td className="px-2 py-2.5 align-top text-center">
-                          {c.retail_krw > 0 ? (
+                          {pi.domestic_retail > 0 ? (
                             <span className={`font-semibold ${c.discount_rate >= 0 ? "text-blue-600" : "text-red-500"}`}>
                               {fPct(c.discount_rate)}
                             </span>
