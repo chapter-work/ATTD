@@ -207,7 +207,7 @@ export default function QuoteBuilder({
                 <thead>
                   <tr className="border-b border-gray-100 text-[10px] text-gray-400 font-medium">
                     <th className="pb-1.5 text-left w-7">No.</th>
-                    <th className="pb-1.5 w-10"></th>
+                    <th className="pb-1.5 w-14"></th>
                     <th className="pb-1.5 text-left">브랜드 / 모델</th>
                     <th className="pb-1.5 text-left w-24">피니쉬</th>
                     <th className="pb-1.5 text-right w-28">단가(판매가)</th>
@@ -225,8 +225,8 @@ export default function QuoteBuilder({
                         <td className="py-2 text-gray-300 text-[10px]">{i + 1}</td>
                         <td className="py-2 pr-1">
                           {qi.snap.img
-                            ? <img src={qi.snap.img} alt={qi.snap.model} className="w-8 h-8 object-cover rounded" />
-                            : <div className="w-8 h-8 bg-gray-100 rounded" />}
+                            ? <img src={qi.snap.img} alt={qi.snap.model} className="w-12 h-12 object-cover rounded" />
+                            : <div className="w-12 h-12 bg-gray-100 rounded" />}
                         </td>
                         <td className="py-2">
                           <div className="text-[10px] text-gray-400 font-semibold">{qi.snap.brand}</div>
@@ -402,8 +402,8 @@ export default function QuoteBuilder({
                     >
                       {item.img
                         ? <img src={item.img} alt={item.model}
-                            className="w-10 h-10 object-cover rounded flex-shrink-0" />
-                        : <div className="w-10 h-10 bg-gray-100 rounded flex-shrink-0" />}
+                            className="w-12 h-12 object-cover rounded flex-shrink-0" />
+                        : <div className="w-12 h-12 bg-gray-100 rounded flex-shrink-0" />}
                       <div className="min-w-0 flex-1">
                         <div className="text-[10px] font-semibold text-gray-400">{item.brand}</div>
                         <div className="text-xs font-semibold text-black truncate">{item.model}</div>

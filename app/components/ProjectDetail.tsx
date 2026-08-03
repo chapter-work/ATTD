@@ -74,13 +74,13 @@ function openProjectQuotePrintWindow(
   const rowsHtml = projItems.map((pi, i) => {
     const c = calcs[i];
     const imgHtml = pi.snap.img
-      ? `<img src="${pi.snap.img}" style="width:36px;height:36px;object-fit:cover;border-radius:4px;" />`
-      : `<div style="width:36px;height:36px;background:#f0f0f0;border-radius:4px;"></div>`;
+      ? `<img src="${pi.snap.img}" style="width:52px;height:52px;object-fit:cover;border-radius:4px;" />`
+      : `<div style="width:52px;height:52px;background:#f0f0f0;border-radius:4px;"></div>`;
 
     return `
       <tr>
         <td style="padding:10px 6px;vertical-align:top;color:#aaa;font-size:11px;">${i + 1}</td>
-        <td style="padding:10px 4px;vertical-align:top;">${imgHtml}</td>
+        <td style="padding:10px 4px;vertical-align:top;width:60px;">${imgHtml}</td>
         <td style="padding:10px 8px;vertical-align:top;">
           <div style="font-size:10px;color:#888;font-weight:600;letter-spacing:0.04em;">${pi.snap.brand}</div>
           <div style="font-size:12px;font-weight:700;color:#111;">${pi.snap.model}</div>
@@ -143,7 +143,7 @@ function openProjectQuotePrintWindow(
     thead tr      { border-top:1.5px solid #111; border-bottom:1.5px solid #111; }
     th            { padding:8px 6px; font-size:11px; font-weight:700; color:#333; }
     th:nth-child(1){ text-align:left; width:28px; }
-    th:nth-child(2){ text-align:left; width:44px; }
+    th:nth-child(2){ text-align:left; width:60px; }
     th:nth-child(3){ text-align:left; }
     th:nth-child(4){ text-align:left; width:90px; }
     th:nth-child(5){ text-align:right; width:100px; }
@@ -572,7 +572,7 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
                 <thead>
                   <tr className="bg-gray-50 border-y border-gray-200">
                     <th className="text-center px-2 py-2 font-semibold text-gray-500 w-8">#</th>
-                    <th className="text-left px-4 py-2 font-semibold text-gray-500 w-[260px]">품목</th>
+                    <th className="text-left px-4 py-2 font-semibold text-gray-500 w-[300px]">품목</th>
                     <th className="text-center px-2 py-2 font-semibold text-gray-500 w-12">수량</th>
                     <th className="text-right px-2 py-2 font-semibold text-gray-500 w-32">유럽 공급가<br/><span className="font-normal text-gray-400">VAT22% 제외 · EUR</span></th>
                     <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">환산 원가<br/><span className="font-normal text-gray-400">× 환율</span></th>
@@ -598,7 +598,7 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
                         </td>
                         <td className="px-3 py-2.5 align-top">
                           <div className="flex items-start gap-2">
-                            <div className="flex-shrink-0 w-12 h-12 rounded border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center">
+                            <div className="flex-shrink-0 w-16 h-16 rounded border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center">
                               {pi.snap.img ? (
                                 <img src={pi.snap.img} alt={pi.snap.model} className="w-full h-full object-cover" />
                               ) : (

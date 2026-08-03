@@ -25,7 +25,7 @@ export default function CatalogTable({ items, exchangeRate, onEdit, onDelete }: 
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr className="bg-[#111] text-white text-xs">
-            <th className="w-16 px-2 py-3 text-left font-medium">사진</th>
+            <th className="w-24 px-2 py-3 text-left font-medium">사진</th>
             <th className="px-3 py-3 text-left font-medium whitespace-nowrap">브랜드</th>
             <th className="px-3 py-3 text-left font-medium whitespace-nowrap">모델명 / 코드</th>
             <th className="px-3 py-3 text-left font-medium whitespace-nowrap">카테고리</th>
@@ -53,10 +53,10 @@ export default function CatalogTable({ items, exchangeRate, onEdit, onDelete }: 
                     <img
                       src={item.img}
                       alt={item.model}
-                      className="w-12 h-12 object-cover rounded border border-gray-100"
+                      className="w-20 h-20 object-cover rounded border border-gray-100"
                     />
                   ) : (
-                    <div className="w-12 h-12 bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
+                    <div className="w-20 h-20 bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
                       <span className="text-gray-300 text-xs">NO IMG</span>
                     </div>
                   )}

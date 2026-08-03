@@ -51,8 +51,8 @@ function openPrintWindow(quote: Quote) {
     const krwUnit   = fKrw(unit, exchangeRate);
     const krwTotal  = fKrw(total, exchangeRate);
     const imgHtml   = qi.snap?.img
-      ? `<img src="${qi.snap.img}" style="width:36px;height:36px;object-fit:cover;border-radius:4px;" />`
-      : `<div style="width:36px;height:36px;background:#f0f0f0;border-radius:4px;"></div>`;
+      ? `<img src="${qi.snap.img}" style="width:52px;height:52px;object-fit:cover;border-radius:4px;" />`
+      : `<div style="width:52px;height:52px;background:#f0f0f0;border-radius:4px;"></div>`;
 
     // 단가 셀
     const unitHtml =
@@ -69,7 +69,7 @@ function openPrintWindow(quote: Quote) {
     return `
       <tr>
         <td style="padding:10px 6px;vertical-align:top;color:#aaa;font-size:11px;">${i + 1}</td>
-        <td style="padding:10px 4px;vertical-align:top;">${imgHtml}</td>
+        <td style="padding:10px 4px;vertical-align:top;width:60px;">${imgHtml}</td>
         <td style="padding:10px 8px;vertical-align:top;">
           <div style="font-size:10px;color:#888;font-weight:600;letter-spacing:0.04em;">${qi.snap?.brand || ""}</div>
           <div style="font-size:12px;font-weight:700;color:#111;">${qi.snap?.model || ""}</div>
@@ -149,7 +149,7 @@ function openPrintWindow(quote: Quote) {
     thead tr       { border-top: 1.5px solid #111; border-bottom: 1.5px solid #111; }
     th             { padding: 8px 6px; font-size: 11px; font-weight: 700; color: #333; }
     th:nth-child(1){ text-align:left; width:28px; }
-    th:nth-child(2){ text-align:left; width:44px; }
+    th:nth-child(2){ text-align:left; width:60px; }
     th:nth-child(3){ text-align:left; }
     th:nth-child(4){ text-align:left; width:90px; }
     th:nth-child(5){ text-align:right; width:100px; }
@@ -514,7 +514,7 @@ function QuotePreview({ quote }: { quote: Quote }) {
           <thead>
             <tr className="border-y-2 border-black">
               <th className="py-2 px-1 text-left font-bold text-[10px] w-6">No.</th>
-              <th className="py-2 px-1 text-left w-9 font-bold text-[10px]">사진</th>
+              <th className="py-2 px-1 text-left w-12 font-bold text-[10px]">사진</th>
               <th className="py-2 px-1 text-left font-bold text-[10px]">브랜드 / 모델</th>
               <th className="py-2 px-1 text-left font-bold text-[10px] w-16">피니쉬</th>
               <th className="py-2 px-1 text-right font-bold text-[10px] w-20">단가</th>
@@ -531,8 +531,8 @@ function QuotePreview({ quote }: { quote: Quote }) {
                   <td className="py-2 px-1 text-gray-400 text-[10px] align-top">{i + 1}</td>
                   <td className="py-2 px-1 align-top">
                     {qi.snap?.img
-                      ? <img src={qi.snap.img} alt={qi.snap.model} className="w-8 h-8 object-cover rounded" />
-                      : <div className="w-8 h-8 bg-gray-100 rounded" />}
+                      ? <img src={qi.snap.img} alt={qi.snap.model} className="w-12 h-12 object-cover rounded" />
+                      : <div className="w-12 h-12 bg-gray-100 rounded" />}
                   </td>
                   <td className="py-2 px-1 align-top">
                     <div className="text-[9px] text-gray-500 font-semibold tracking-wide leading-tight">{qi.snap?.brand}</div>
