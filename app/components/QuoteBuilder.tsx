@@ -96,8 +96,11 @@ export default function QuoteBuilder({
         title, client, quote_date: quoteDate,
         currency, exchange_rate: exchangeRate, items: quoteItems,
       });
-      // 저장 완료 후 폼 초기화 (새 발주서 상태)
-      onNewQuote();
+      // 저장 완료 후 내부 상태 직접 초기화 (editingQuote가 null→null이면 useEffect 미실행)
+      setTitle(""); setClient("");
+      setQuoteDate(new Date().toISOString().slice(0, 10));
+      setCurrency("BOTH"); setQuoteItems([]);
+      onNewQuote(); // 부모 editingOrder도 null로
     } finally {
       setSaving(false);
     }
