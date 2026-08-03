@@ -194,6 +194,14 @@ function openProjectQuotePrintWindow(
       .toolbar { display:none !important; }
       body { padding:0 48px; }
     }
+    /* 모바일 대응 */
+    @media (max-width: 600px) {
+      body { padding: 72px 12px 20px; }
+      .attd-brand { font-size: 28px; }
+      th, td { font-size: 10px !important; padding: 7px 3px !important; }
+      th:nth-child(4) { display: none; }  /* 피니쉬 모바일 숨김 */
+      td:nth-child(4) { display: none; }  /* 피니쉬 td 모바일 숨김 */
+    }
   </style>
 </head>
 <body>

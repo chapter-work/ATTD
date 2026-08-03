@@ -238,6 +238,14 @@ function openPrintWindow(quote: Quote) {
       body { padding: 0 48px; }
       .no-print { display: none !important; }
     }
+    /* 모바일 대응 */
+    @media (max-width: 600px) {
+      body { padding: 72px 12px 20px; }
+      .attd-brand { font-size: 28px; }
+      th, td { font-size: 10px !important; padding: 7px 3px !important; }
+      th:nth-child(4) { display: none; }  /* 피니쉬 모바일 숨김 */
+      td:nth-child(4) { display: none; }  /* 피니쉬 td 모바일 숨김 */
+    }
   </style>
 </head>
 <body>
@@ -490,52 +498,64 @@ function QuotePreview({ quote }: { quote: Quote }) {
         </div>
       </div>
 
-      {/* 품목 테이블 */}
-      <table className="w-full text-sm border-collapse mb-0">
-        <thead>
-          <tr className="border-y-2 border-black">
-            <th className="py-2 text-left font-bold text-xs w-7">No.</th>
-            <th className="py-2 text-left w-11 font-bold text-xs">사진</th>
-            <th className="py-2 text-left font-bold text-xs">브랜드 / 모델</th>
-            <th className="py-2 text-left font-bold text-xs">피니쉬</th>
-            <th className="py-2 text-center font-bold text-xs w-10">수량</th>
-            <th className="py-2 text-right font-bold text-xs w-28">합계</th>
-          </tr>
-        </thead>
-        <tbody>
-          {(quote.items || []).map((qi, i) => {
-            const unit  = discountedPrice(qi.snap?.price_eur || 0, qi.discount);
-            const total = unit * qi.qty;
-            return (
-              <tr key={qi.itemId} className="border-b border-gray-100">
-                <td className="py-2.5 text-gray-400 text-xs align-top">{i + 1}</td>
-                <td className="py-2.5 pr-2 align-top">
-                  {qi.snap?.img
-                    ? <img src={qi.snap.img} alt={qi.snap.model} className="w-9 h-9 object-cover rounded" />
-                    : <div className="w-9 h-9 bg-gray-100 rounded" />}
-                </td>
-                <td className="py-2.5 align-top">
-                  <div className="text-[10px] text-gray-500 font-semibold tracking-wide">{qi.snap?.brand}</div>
-                  <div className="font-bold text-xs text-black">{qi.snap?.model}</div>
-                  {qi.snap?.dims && <div className="text-[10px] text-gray-400 mt-0.5">{qi.snap.dims}</div>}
-                </td>
-                <td className="py-2.5 text-xs text-gray-500 align-top max-w-[90px] whitespace-pre-line">{qi.snap?.finish}</td>
-                <td className="py-2.5 text-center text-xs font-bold align-top">{qi.qty}</td>
-                <td className="py-2.5 text-right align-top whitespace-nowrap">
-                  {currency === "KRW"
-                    ? <div className="font-bold text-xs">{fKrw(total, exchangeRate)}</div>
-                    : currency === "EUR"
-                    ? <div className="font-bold text-xs">{fEur(total)}</div>
-                    : <>
-                        <div className="font-bold text-xs">{fEur(total)}</div>
-                        <div className="text-[10px] text-gray-400">{fKrw(total, exchangeRate)}</div>
-                      </>}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      {/* 품목 테이블 — 모바일 반응형 */}
+      <div className="overflow-x-auto -mx-1">
+        <table className="w-full text-sm border-collapse mb-0" style={{minWidth: "420px"}}>
+          <thead>
+            <tr className="border-y-2 border-black">
+              <th className="py-2 px-1 text-left font-bold text-[10px] w-6">No.</th>
+              <th className="py-2 px-1 text-left w-9 font-bold text-[10px]">사진</th>
+              <th className="py-2 px-1 text-left font-bold text-[10px]">브랜드 / 모델</th>
+              <th className="py-2 px-1 text-left font-bold text-[10px] w-16">피니쉬</th>
+              <th className="py-2 px-1 text-right font-bold text-[10px] w-20">단가</th>
+              <th className="py-2 px-1 text-center font-bold text-[10px] w-8">수량</th>
+              <th className="py-2 px-1 text-right font-bold text-[10px] w-20">합계</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(quote.items || []).map((qi, i) => {
+              const unit  = discountedPrice(qi.snap?.price_eur || 0, qi.discount);
+              const total = unit * qi.qty;
+              return (
+                <tr key={qi.itemId} className="border-b border-gray-100">
+                  <td className="py-2 px-1 text-gray-400 text-[10px] align-top">{i + 1}</td>
+                  <td className="py-2 px-1 align-top">
+                    {qi.snap?.img
+                      ? <img src={qi.snap.img} alt={qi.snap.model} className="w-8 h-8 object-cover rounded" />
+                      : <div className="w-8 h-8 bg-gray-100 rounded" />}
+                  </td>
+                  <td className="py-2 px-1 align-top">
+                    <div className="text-[9px] text-gray-500 font-semibold tracking-wide leading-tight">{qi.snap?.brand}</div>
+                    <div className="font-bold text-[11px] text-black leading-snug">{qi.snap?.model}</div>
+                  </td>
+                  <td className="py-2 px-1 text-[10px] text-gray-500 align-top leading-snug">{qi.snap?.finish || "—"}</td>
+                  <td className="py-2 px-1 text-right align-top whitespace-nowrap">
+                    {currency === "KRW"
+                      ? <div className="font-semibold text-[11px]">{fKrw(unit, exchangeRate)}</div>
+                      : currency === "EUR"
+                      ? <div className="font-semibold text-[11px]">{fEur(unit)}</div>
+                      : <>
+                          <div className="font-semibold text-[11px]">{fEur(unit)}</div>
+                          <div className="text-[9px] text-gray-400">{fKrw(unit, exchangeRate)}</div>
+                        </>}
+                  </td>
+                  <td className="py-2 px-1 text-center text-[11px] font-bold align-top">{qi.qty}</td>
+                  <td className="py-2 px-1 text-right align-top whitespace-nowrap">
+                    {currency === "KRW"
+                      ? <div className="font-bold text-[11px]">{fKrw(total, exchangeRate)}</div>
+                      : currency === "EUR"
+                      ? <div className="font-bold text-[11px]">{fEur(total)}</div>
+                      : <>
+                          <div className="font-bold text-[11px]">{fEur(total)}</div>
+                          <div className="text-[9px] text-gray-400">{fKrw(total, exchangeRate)}</div>
+                        </>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
       {/* 합계 */}
       <div className="flex justify-end mb-6"
