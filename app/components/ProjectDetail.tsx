@@ -84,13 +84,14 @@ function openProjectQuotePrintWindow(
         <td style="padding:10px 8px;vertical-align:top;">
           <div style="font-size:10px;color:#888;font-weight:600;letter-spacing:0.04em;">${pi.snap.brand}</div>
           <div style="font-size:12px;font-weight:700;color:#111;">${pi.snap.model}</div>
-          ${pi.snap.dims  ? `<div style="font-size:10px;color:#aaa;">${pi.snap.dims}</div>`  : ""}
         </td>
         <td style="padding:10px 8px;vertical-align:top;font-size:11px;color:#555;max-width:90px;">${pi.snap.finish || ""}</td>
+        <td style="padding:10px 6px;vertical-align:top;text-align:right;font-size:12px;white-space:nowrap;">
+          <b>${fKrwFull(c.sell_price)}</b>
+        </td>
         <td style="padding:10px 6px;vertical-align:top;text-align:center;font-size:12px;font-weight:700;">${pi.qty}</td>
         <td style="padding:10px 6px;vertical-align:top;text-align:right;font-size:12px;white-space:nowrap;">
           <b>${fKrwFull(c.sell_price_total)}</b>
-          ${pi.qty > 1 ? `<div style="font-size:10px;color:#999;margin-top:2px;">단가 ${fKrwFull(c.sell_price)}</div>` : ""}
         </td>
       </tr>`;
   }).join("");
@@ -144,9 +145,10 @@ function openProjectQuotePrintWindow(
     th:nth-child(1){ text-align:left; width:28px; }
     th:nth-child(2){ text-align:left; width:44px; }
     th:nth-child(3){ text-align:left; }
-    th:nth-child(4){ text-align:left; }
-    th:nth-child(5){ text-align:center; width:40px; }
-    th:nth-child(6){ text-align:right; width:130px; }
+    th:nth-child(4){ text-align:left; width:90px; }
+    th:nth-child(5){ text-align:right; width:100px; }
+    th:nth-child(6){ text-align:center; width:40px; }
+    th:nth-child(7){ text-align:right; width:110px; }
     tbody tr      { border-bottom:1px solid #eee; }
 
     .totals       { display:flex; justify-content:flex-end; gap:32px;
@@ -234,8 +236,9 @@ function openProjectQuotePrintWindow(
         <th>사진</th>
         <th>브랜드 / 모델</th>
         <th>피니쉬</th>
+        <th style="text-align:right;">단가</th>
         <th style="text-align:center;">수량</th>
-        <th style="text-align:right;">금액</th>
+        <th style="text-align:right;">합계</th>
       </tr>
     </thead>
     <tbody>${rowsHtml}</tbody>

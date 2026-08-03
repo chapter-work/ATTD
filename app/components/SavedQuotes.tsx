@@ -46,13 +46,22 @@ function openPrintWindow(quote: Quote) {
     const unit = discountedPrice(qi.snap?.price_eur || 0, qi.discount);
     const total = unit * qi.qty;
 
+    const eurUnit   = fEur(unit);
     const eurTotal  = fEur(total);
+    const krwUnit   = fKrw(unit, exchangeRate);
     const krwTotal  = fKrw(total, exchangeRate);
     const imgHtml   = qi.snap?.img
       ? `<img src="${qi.snap.img}" style="width:36px;height:36px;object-fit:cover;border-radius:4px;" />`
       : `<div style="width:36px;height:36px;background:#f0f0f0;border-radius:4px;"></div>`;
 
-    const priceHtml =
+    // 단가 셀
+    const unitHtml =
+      currency === "EUR"  ? `<b>${eurUnit}</b>` :
+      currency === "KRW"  ? `<b>${krwUnit}</b>` :
+      `<b>${eurUnit}</b><br/><span style="color:#999;font-size:10px;">${krwUnit}</span>`;
+
+    // 합계 셀
+    const totalCellHtml =
       currency === "EUR"  ? `<b>${eurTotal}</b>` :
       currency === "KRW"  ? `<b>${krwTotal}</b>` :
       `<b>${eurTotal}</b><br/><span style="color:#999;font-size:10px;">${krwTotal}</span>`;
@@ -64,11 +73,11 @@ function openPrintWindow(quote: Quote) {
         <td style="padding:10px 8px;vertical-align:top;">
           <div style="font-size:10px;color:#888;font-weight:600;letter-spacing:0.04em;">${qi.snap?.brand || ""}</div>
           <div style="font-size:12px;font-weight:700;color:#111;">${qi.snap?.model || ""}</div>
-          ${qi.snap?.dims ? `<div style="font-size:10px;color:#aaa;">${qi.snap.dims}</div>` : ""}
         </td>
         <td style="padding:10px 8px;vertical-align:top;font-size:11px;color:#555;max-width:90px;">${qi.snap?.finish || ""}</td>
+        <td style="padding:10px 6px;vertical-align:top;text-align:right;font-size:12px;white-space:nowrap;">${unitHtml}</td>
         <td style="padding:10px 6px;vertical-align:top;text-align:center;font-size:12px;font-weight:700;">${qi.qty}</td>
-        <td style="padding:10px 6px;vertical-align:top;text-align:right;font-size:12px;white-space:nowrap;">${priceHtml}</td>
+        <td style="padding:10px 6px;vertical-align:top;text-align:right;font-size:12px;white-space:nowrap;">${totalCellHtml}</td>
       </tr>`;
   }).join("");
 
@@ -142,9 +151,10 @@ function openPrintWindow(quote: Quote) {
     th:nth-child(1){ text-align:left; width:28px; }
     th:nth-child(2){ text-align:left; width:44px; }
     th:nth-child(3){ text-align:left; }
-    th:nth-child(4){ text-align:left; }
-    th:nth-child(5){ text-align:center; width:40px; }
-    th:nth-child(6){ text-align:right; width:110px; }
+    th:nth-child(4){ text-align:left; width:90px; }
+    th:nth-child(5){ text-align:right; width:100px; }
+    th:nth-child(6){ text-align:center; width:40px; }
+    th:nth-child(7){ text-align:right; width:110px; }
     tbody tr       { border-bottom: 1px solid #eee; }
 
     /* 합계 — 굵은 2px 선, 레이블+금액 가로 정렬 */
@@ -274,6 +284,7 @@ function openPrintWindow(quote: Quote) {
         <th>사진</th>
         <th>브랜드 / 모델</th>
         <th>피니쉬</th>
+        <th style="text-align:right;">단가</th>
         <th style="text-align:center;">수량</th>
         <th style="text-align:right;">합계</th>
       </tr>
