@@ -6,16 +6,19 @@ import Header, { SubHeader } from "@/app/components/Header";
 import CatalogTable from "@/app/components/CatalogTable";
 import ItemModal from "@/app/components/ItemModal";
 import QuoteBuilder from "@/app/components/QuoteBuilder";
+import SavedQuotes from "@/app/components/SavedQuotes";
 import ProjectList from "@/app/components/ProjectList";
 import ProjectDetail from "@/app/components/ProjectDetail";
 
-type Tab = "catalog" | "projects" | "quotes";
+type Tab = "catalog" | "projects" | "customer_quotes" | "orders";
 type SyncStatus = "online" | "offline" | "syncing";
 
 export default function Home() {
   const [tab, setTab] = useState<Tab>("catalog");
   const [items, setItems] = useState<Item[]>([]);
-  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [customerQuotes, setCustomerQuotes] = useState<Quote[]>([]); // currency === "KRW"
+  const [orders, setOrders] = useState<Quote[]>([]);                   // currency !== "KRW"
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("offline");
   const [exchangeRate, setExchangeRate] = useState(1700);
@@ -29,8 +32,8 @@ export default function Home() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
 
-  // 견적서
-  const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
+  // 발주서 편집
+  const [editingOrder, setEditingOrder] = useState<Quote | null>(null);
 
   // 프로젝트: selectedProject = null이면 목록, 아니면 해당 프로젝트 편집
   // "new" 문자열을 특수값으로 사용하여 신규 생성 구분
@@ -47,7 +50,11 @@ export default function Home() {
   const loadQuotes = useCallback(async () => {
     const { data, error } = await supabase
       .from("quotes").select("*").order("created_at", { ascending: false });
-    if (!error && data) setQuotes(data as Quote[]);
+    if (!error && data) {
+      const all = data as Quote[];
+      setCustomerQuotes(all.filter(q => q.currency === "KRW"));
+      setOrders(all.filter(q => q.currency !== "KRW"));
+    }
   }, []);
 
   const loadProjects = useCallback(async (itemsMap?: Map<string, string | null>) => {
@@ -137,29 +144,35 @@ export default function Home() {
     await loadItems();
   };
 
-  // ── 견적서 CRUD ───────────────────────────────────────
-  const handleSaveQuote = async (quoteData: Partial<Quote>) => {
-    // snap.img 항상 최신 items에서 보완하여 저장
+  // ── 발주서 CRUD ───────────────────────────────────────
+  const handleSaveOrder = async (quoteData: Partial<Quote>) => {
     const imgMap = new Map<string, string | null>(items.map(it => [it.id, it.img]));
     const patchedItems = (quoteData.items || []).map(qi => ({
       ...qi,
       snap: { ...qi.snap, img: qi.snap?.img || imgMap.get(qi.itemId) || null },
     }));
     const payload = { ...quoteData, items: patchedItems, updated_at: new Date().toISOString() };
-    if (editingQuote?.id) {
-      await supabase.from("quotes").update(payload).eq("id", editingQuote.id);
+    if (editingOrder?.id) {
+      await supabase.from("quotes").update(payload).eq("id", editingOrder.id);
     } else {
       await supabase.from("quotes").insert([payload]);
     }
     await loadQuotes();
-    alert("견적서가 저장되었습니다");
+    alert("발주서가 저장되었습니다");
   };
 
-  const handleDeleteQuote = async (id: string) => {
-    if (!confirm("이 견적서를 삭제하시겠습니까?")) return;
+  const handleDeleteOrder = async (id: string) => {
+    if (!confirm("이 발주서를 삭제하시겠습니까?")) return;
     await supabase.from("quotes").delete().eq("id", id);
     await loadQuotes();
-    if (editingQuote?.id === id) setEditingQuote(null);
+    if (editingOrder?.id === id) setEditingOrder(null);
+  };
+
+  // ── 고객견적서 삭제 ────────────────────────────────────
+  const handleDeleteCustomerQuote = async (id: string) => {
+    if (!confirm("이 고객견적서를 삭제하시겠습니까?")) return;
+    await supabase.from("quotes").delete().eq("id", id);
+    await loadQuotes();
   };
 
   // ── 프로젝트 CRUD ─────────────────────────────────────
@@ -223,7 +236,7 @@ export default function Home() {
           setSelectedProject(null);
           setShowProjectDetail(true);
         }}
-        onNewQuote={() => setEditingQuote(null)}
+        onNewOrder={() => setEditingOrder(null)}
       />
 
       <main className="flex-1 overflow-hidden">
@@ -308,13 +321,19 @@ export default function Home() {
                   setSelectedProject(null);
                 }}
                 onCreateQuote={async (quoteData) => {
-                  const payload = { ...quoteData, updated_at: new Date().toISOString() };
+                  // snap.img 보완 후 저장
+                  const imgMap = new Map<string, string | null>(items.map(it => [it.id, it.img]));
+                  const patchedItems = (quoteData.items || []).map(qi => ({
+                    ...qi,
+                    snap: { ...qi.snap, img: qi.snap?.img || imgMap.get(qi.itemId) || null },
+                  }));
+                  const payload = { ...quoteData, items: patchedItems, updated_at: new Date().toISOString() };
                   const { error } = await supabase.from("quotes").insert([payload]);
-                  if (error) { alert("견적서 저장 오류: " + error.message); return; }
+                  if (error) { alert("고객견적서 저장 오류: " + error.message); return; }
                   await loadQuotes();
-                  setTab("quotes");
+                  setTab("customer_quotes");
                   setShowProjectDetail(false);
-                  alert("견적서가 생성되었습니다. 견적서 탭에서 확인하세요.");
+                  alert("고객견적서가 생성되었습니다. 고객견적서 탭에서 확인하세요.");
                 }}
               />
             </div>
@@ -331,18 +350,55 @@ export default function Home() {
           )}
         </div>
 
-        {/* ── 고객 견적서 ── */}
-        <div className={`h-full overflow-auto ${tab === "quotes" ? "" : "hidden"}`}>
+        {/* ── 고객견적서 탭 (KRW only, 프로젝트에서 생성) ── */}
+        <div className={`h-full flex flex-col overflow-hidden ${tab === "customer_quotes" ? "" : "hidden"}`}>
+          {/* 안내 배너 */}
+          <div className="bg-blue-50 border-b border-blue-100 px-4 py-2.5 flex items-center gap-2 flex-shrink-0">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span className="text-xs text-blue-600">
+              고객견적서는 <strong>프로젝트 탭</strong>에서 &quot;고객 견적서 생성&quot; 버튼으로 만들 수 있습니다.
+            </span>
+            <button
+              onClick={() => { setTab("projects"); }}
+              className="ml-auto flex-shrink-0 text-xs text-blue-700 font-semibold border border-blue-300 rounded px-2 py-0.5 hover:bg-blue-100 transition-colors"
+            >
+              프로젝트로 이동 →
+            </button>
+          </div>
+          {/* 저장된 고객견적서 목록 */}
+          <div className="flex-1 overflow-auto">
+            <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+              <span className="text-xs font-bold text-gray-500 tracking-wide uppercase">저장된 고객견적서</span>
+              <span className="text-[10px] text-gray-400">{customerQuotes.length}건</span>
+            </div>
+            <SavedQuotes
+              quotes={customerQuotes}
+              onLoad={() => {
+                /* 고객견적서는 편집 불가 — 프로젝트에서만 생성 */
+                alert("고객견적서는 프로젝트 탭에서 수정 후 재생성하세요.");
+              }}
+              onDelete={handleDeleteCustomerQuote}
+              readOnly
+            />
+          </div>
+        </div>
+
+        {/* ── 발주서 탭 (EUR+KRW, 직접 작성) ── */}
+        <div className={`h-full overflow-auto ${tab === "orders" ? "" : "hidden"}`}>
           <QuoteBuilder
             items={items}
             exchangeRate={exchangeRate}
             onExchangeRateChange={setExchangeRate}
-            onSave={handleSaveQuote}
-            editingQuote={editingQuote}
-            onNewQuote={() => setEditingQuote(null)}
-            quotes={quotes}
-            onLoadQuote={setEditingQuote}
-            onDeleteQuote={handleDeleteQuote}
+            onSave={handleSaveOrder}
+            editingQuote={editingOrder}
+            onNewQuote={() => setEditingOrder(null)}
+            quotes={orders}
+            onLoadQuote={setEditingOrder}
+            onDeleteQuote={handleDeleteOrder}
           />
         </div>
 

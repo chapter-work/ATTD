@@ -26,7 +26,8 @@ interface SavedQuotesProps {
   quotes: Quote[];
   onLoad: (quote: Quote) => void;
   onDelete: (id: string) => void;
-  compact?: boolean; // QuoteBuilder 내 인라인 모드
+  compact?: boolean;   // QuoteBuilder 내 인라인 모드
+  readOnly?: boolean;  // true = 편집 버튼 숨김 (고객견적서 탭)
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -353,7 +354,7 @@ function openPrintWindow(quote: Quote) {
 /* ─────────────────────────────────────────────────────────
    SavedQuotes 컴포넌트
 ───────────────────────────────────────────────────────── */
-export default function SavedQuotes({ quotes, onLoad, onDelete, compact }: SavedQuotesProps) {
+export default function SavedQuotes({ quotes, onLoad, onDelete, compact, readOnly }: SavedQuotesProps) {
   const [viewingQuote, setViewingQuote] = useState<Quote | null>(null);
 
   const openView  = (q: Quote) => setViewingQuote(q);
@@ -393,12 +394,14 @@ export default function SavedQuotes({ quotes, onLoad, onDelete, compact }: Saved
                       >
                         보기
                       </button>
-                      <button
-                        onClick={() => onLoad(q)}
-                        className="flex-1 py-1 text-[10px] font-medium border border-black rounded bg-black text-white hover:bg-gray-800 transition-colors"
-                      >
-                        편집
-                      </button>
+                      {!readOnly && (
+                        <button
+                          onClick={() => onLoad(q)}
+                          className="flex-1 py-1 text-[10px] font-medium border border-black rounded bg-black text-white hover:bg-gray-800 transition-colors"
+                        >
+                          편집
+                        </button>
+                      )}
                       <button
                         onClick={() => onDelete(q.id)}
                         className="px-2 py-1 text-[10px] border border-gray-200 rounded text-gray-400 hover:text-red-500 hover:border-red-300 hover:bg-red-50 transition-colors"

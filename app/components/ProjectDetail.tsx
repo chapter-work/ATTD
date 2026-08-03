@@ -297,7 +297,274 @@ function openProjectQuotePrintWindow(
   }
 }
 
-// ── Props ─────────────────────────────────────────────────
+// ── 내부 원가표 인쇄 팝업 ──────────────────────────────────
+function openCostSheetWindow(
+  title: string,
+  client: string,
+  projectDate: string,
+  projItems: ProjectItem[],
+  exchangeRate: number,
+  vatRate: number,
+) {
+  const calcs   = projItems.map(pi => calcProjectItem(pi, exchangeRate, vatRate));
+  const summary = calcProjectSummary(projItems, exchangeRate, vatRate);
+
+  const rowsHtml = projItems.map((pi, i) => {
+    const c = calcs[i];
+    const imgHtml = pi.snap.img
+      ? `<img src="${pi.snap.img}" style="width:44px;height:44px;object-fit:contain;border-radius:4px;background:#fafafa;padding:3px;display:block;" />`
+      : `<div style="width:44px;height:44px;background:#f0f0f0;border-radius:4px;"></div>`;
+
+    return `
+      <tr>
+        <td style="padding:8px 5px;color:#aaa;font-size:10px;vertical-align:top;">${i + 1}</td>
+        <td style="padding:8px 4px;vertical-align:top;width:52px;">${imgHtml}</td>
+        <td style="padding:8px 7px;vertical-align:top;">
+          <div style="font-size:9px;color:#888;font-weight:600;letter-spacing:0.04em;">${pi.snap.brand}</div>
+          <div style="font-size:11px;font-weight:700;color:#111;">${pi.snap.model}</div>
+          ${pi.snap.finish ? `<div style="font-size:9px;color:#aaa;">${pi.snap.finish}</div>` : ""}
+        </td>
+        <td style="padding:8px 5px;vertical-align:top;text-align:center;font-size:11px;font-weight:700;">${pi.qty}</td>
+        <td style="padding:8px 5px;vertical-align:top;text-align:right;font-size:10px;white-space:nowrap;">
+          <div style="font-weight:700;color:#111;">€${pi.price_eur.toFixed(2)}</div>
+          ${pi.qty > 1 ? `<div style="color:#aaa;font-size:9px;">합 €${(pi.price_eur * pi.qty).toFixed(2)}</div>` : ""}
+        </td>
+        <td style="padding:8px 5px;vertical-align:top;text-align:right;font-size:10px;white-space:nowrap;">
+          <div style="font-weight:600;color:#333;">${fKrwFull(c.cost_krw)}</div>
+          ${pi.qty > 1 ? `<div style="color:#aaa;font-size:9px;">합 ${fKrwFull(c.cost_krw_total)}</div>` : ""}
+        </td>
+        <td style="padding:8px 5px;vertical-align:top;text-align:center;font-size:10px;color:#555;">${pi.supply_cost_rate}%</td>
+        <td style="padding:8px 5px;vertical-align:top;text-align:right;font-size:10px;white-space:nowrap;">
+          <div style="color:#555;">${fKrwFull(c.supply_cost)}</div>
+          ${pi.qty > 1 ? `<div style="color:#aaa;font-size:9px;">합 ${fKrwFull(c.supply_cost_total)}</div>` : ""}
+        </td>
+        <td style="padding:8px 5px;vertical-align:top;text-align:right;font-size:10px;white-space:nowrap;">
+          <div style="font-weight:700;color:#111;">${fKrwFull(c.total_cost)}</div>
+          ${pi.qty > 1 ? `<div style="color:#aaa;font-size:9px;">합 ${fKrwFull(c.total_cost_total)}</div>` : ""}
+        </td>
+        <td style="padding:8px 5px;vertical-align:top;text-align:center;font-size:10px;color:#555;">${pi.sell_margin}%</td>
+        <td style="padding:8px 5px;vertical-align:top;text-align:right;font-size:10px;white-space:nowrap;">
+          <div style="font-weight:700;color:#111;">${fKrwFull(c.sell_price)}</div>
+          ${pi.qty > 1 ? `<div style="color:#aaa;font-size:9px;">합 ${fKrwFull(c.sell_price_total)}</div>` : ""}
+        </td>
+        <td style="padding:8px 5px;vertical-align:top;text-align:right;font-size:10px;white-space:nowrap;">
+          <div style="font-weight:700;color:${c.profit >= 0 ? "#059669" : "#dc2626"};">${fKrwFull(c.profit_total)}</div>
+        </td>
+      </tr>`;
+  }).join("");
+
+  const html = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ATTD 내부 원가표 — ${title}</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    body {
+      font-family: -apple-system,'Helvetica Neue',Arial,sans-serif;
+      color:#111; background:#fff;
+      padding:36px 40px; max-width:1100px; margin:0 auto;
+    }
+
+    .doc-header { padding-top:24px; padding-bottom:16px; border-bottom:2px solid #111; margin-bottom:20px; display:flex; justify-content:space-between; align-items:flex-end; }
+    .doc-brand  { font-size:32px; font-weight:900; letter-spacing:0.18em; color:#111; line-height:1; }
+    .doc-sub    { font-size:11px; font-weight:300; letter-spacing:0.08em; color:#888; margin-top:4px; }
+    .doc-badge  { font-size:10px; font-weight:700; letter-spacing:0.14em; background:#111; color:#fff; padding:4px 10px; border-radius:4px; text-transform:uppercase; }
+
+    .meta-row   { display:flex; gap:32px; margin-bottom:18px; }
+    .meta-item  { display:flex; flex-direction:column; gap:2px; }
+    .meta-label { font-size:8px; font-weight:700; color:#aaa; letter-spacing:0.12em; text-transform:uppercase; }
+    .meta-value { font-size:12px; font-weight:700; color:#111; }
+
+    table         { width:100%; border-collapse:collapse; font-size:11px; }
+    thead tr      { background:#f8f8f8; border-top:1.5px solid #111; border-bottom:1.5px solid #111; }
+    th            { padding:7px 5px; font-size:9px; font-weight:700; color:#555; white-space:nowrap; }
+    th.r          { text-align:right; }
+    th.c          { text-align:center; }
+    th.l          { text-align:left; }
+    tbody tr      { border-bottom:1px solid #eee; }
+    tbody tr:hover{ background:#fafafa; }
+
+    .summary-bar {
+      display:flex; gap:16px; flex-wrap:wrap;
+      border-top:2px solid #111; border-bottom:2px solid #111;
+      padding:10px 0; margin-top:0; margin-bottom:0;
+      justify-content:flex-end;
+    }
+    .sum-item   { display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
+    .sum-label  { font-size:8px; color:#aaa; font-weight:600; text-transform:uppercase; letter-spacing:0.1em; }
+    .sum-value  { font-size:12px; font-weight:800; color:#111; white-space:nowrap; }
+    .sum-value.green { color:#059669; }
+    .sum-value.red   { color:#dc2626; }
+    .sum-value.blue  { color:#2563eb; }
+
+    .confidential {
+      margin-top:20px; padding:10px 14px; background:#fff7ed; border:1px solid #fed7aa;
+      border-radius:6px; display:flex; align-items:center; gap:8px;
+    }
+    .conf-icon  { font-size:14px; }
+    .conf-text  { font-size:9px; color:#9a3412; line-height:1.5; }
+
+    .toolbar {
+      position:fixed; top:0; left:0; right:0; height:50px;
+      background:#111; display:flex; align-items:center;
+      justify-content:space-between; padding:0 16px; z-index:999;
+    }
+    .toolbar-left  { display:flex; align-items:center; gap:10px; }
+    .toolbar-title { font-size:13px; font-weight:700; color:#fff; letter-spacing:0.12em; }
+    .toolbar-badge { font-size:9px; font-weight:700; color:#111; background:#f59e0b; border-radius:3px; padding:2px 7px; letter-spacing:0.1em; }
+    .toolbar-actions { display:flex; gap:8px; align-items:center; }
+    .btn-print {
+      display:flex; align-items:center; gap:6px;
+      background:#fff; color:#111; border:none; border-radius:7px;
+      padding:6px 13px; font-size:11px; font-weight:700; cursor:pointer;
+    }
+    .btn-print:active { background:#e5e5e5; }
+    .btn-close {
+      display:flex; align-items:center; justify-content:center;
+      width:32px; height:32px; background:rgba(255,255,255,0.12);
+      color:#fff; border:none; border-radius:50%; font-size:17px; cursor:pointer;
+    }
+    body { padding-top:68px; }
+
+    @page {
+      size:A3 landscape;
+      margin:10mm 8mm;
+      @top-left   { content: none; }
+      @top-right  { content: none; }
+      @top-center { content: none; }
+      @bottom-left  { content: none; }
+      @bottom-right { content: none; }
+      @bottom-center { content: counter(page) " / " counter(pages); font-size:8pt; color:#aaa; }
+    }
+    @media print {
+      .toolbar { display:none !important; }
+      body { padding:0 36px; }
+    }
+    @media (max-width:900px) {
+      body { padding:68px 10px 20px; }
+      th, td { font-size:9px !important; padding:6px 3px !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <span class="toolbar-title">ATTD</span>
+      <span class="toolbar-badge">내부용 원가표</span>
+    </div>
+    <div class="toolbar-actions">
+      <button class="btn-print" onclick="window.print()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="6 9 6 2 18 2 18 9"/>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+          <rect x="6" y="14" width="12" height="8"/>
+        </svg>
+        인쇄 / PDF 저장
+      </button>
+      <button class="btn-close" onclick="window.close()" title="닫기">✕</button>
+    </div>
+  </div>
+
+  <div class="doc-header">
+    <div>
+      <div class="doc-brand">ATTD</div>
+      <div class="doc-sub">Internal Cost Sheet &mdash; Confidential</div>
+    </div>
+    <div class="doc-badge">내부용 원가표</div>
+  </div>
+
+  <div class="meta-row">
+    <div class="meta-item">
+      <div class="meta-label">프로젝트명</div>
+      <div class="meta-value">${title || "—"}</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">고객명</div>
+      <div class="meta-value">${client || "—"}</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">견적일</div>
+      <div class="meta-value">${projectDate || "—"}</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">환율 (KRW/EUR)</div>
+      <div class="meta-value">₩ ${exchangeRate.toLocaleString("ko-KR")}</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">총 품목 수</div>
+      <div class="meta-value">${summary.item_count}개 (${projItems.length}종)</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th class="l" style="width:24px;">No.</th>
+        <th class="l" style="width:52px;">사진</th>
+        <th class="l">브랜드 / 모델</th>
+        <th class="c" style="width:36px;">수량</th>
+        <th class="r" style="width:90px;">공급가<br/><span style="font-weight:400;color:#aaa;">EUR</span></th>
+        <th class="r" style="width:90px;">환산 원가<br/><span style="font-weight:400;color:#aaa;">KRW</span></th>
+        <th class="c" style="width:52px;">부대<br/>비율</th>
+        <th class="r" style="width:88px;">부대비<br/><span style="font-weight:400;color:#aaa;">KRW</span></th>
+        <th class="r" style="width:96px;">총 원가<br/><span style="font-weight:400;color:#aaa;">KRW</span></th>
+        <th class="c" style="width:52px;">마진율</th>
+        <th class="r" style="width:96px;">판매단가<br/><span style="font-weight:400;color:#aaa;">KRW</span></th>
+        <th class="r" style="width:96px;">이익금액<br/><span style="font-weight:400;color:#aaa;">KRW</span></th>
+      </tr>
+    </thead>
+    <tbody>${rowsHtml}</tbody>
+  </table>
+
+  <div class="summary-bar">
+    <div class="sum-item">
+      <div class="sum-label">유럽 총액</div>
+      <div class="sum-value">€ ${summary.total_eur.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+    </div>
+    <div class="sum-item">
+      <div class="sum-label">총 원가</div>
+      <div class="sum-value">${fKrwFull(summary.total_cost_krw)}</div>
+    </div>
+    <div class="sum-item">
+      <div class="sum-label">총 부대비</div>
+      <div class="sum-value">${fKrwFull(summary.total_supply)}</div>
+    </div>
+    <div class="sum-item">
+      <div class="sum-label">총 고객 판매가</div>
+      <div class="sum-value blue">${fKrwFull(summary.total_sell)}</div>
+    </div>
+    <div class="sum-item">
+      <div class="sum-label">총 이익금액</div>
+      <div class="sum-value ${summary.total_profit >= 0 ? "green" : "red"}">${fKrwFull(summary.total_profit)}</div>
+    </div>
+    <div class="sum-item">
+      <div class="sum-label">평균 마진율</div>
+      <div class="sum-value ${summary.avg_margin >= 20 ? "green" : "red"}">${summary.avg_margin.toFixed(1)}%</div>
+    </div>
+  </div>
+
+  <div class="confidential">
+    <div class="conf-icon">⚠️</div>
+    <div class="conf-text">
+      <strong>내부 기밀 문서</strong> — 본 원가표는 ATTD 내부 업무용으로만 사용하며, 고객에게 공유하지 마십시오.<br/>
+      본 문서에 기재된 원가, 마진, 이익금액 정보는 외부에 노출 시 영업상 손해가 발생할 수 있습니다.
+    </div>
+  </div>
+
+</body>
+</html>`;
+
+  const win = window.open("", "_blank", "width=1200,height=900");
+  if (win) {
+    win.document.write(html);
+    win.document.close();
+  }
+}
+
+
 interface ProjectDetailProps {
   project: Project | null;
   items: Item[];
@@ -803,10 +1070,13 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
               </svg>
               {creatingQuote ? "생성 중..." : "고객 견적서 생성"}
             </button>
-            {/* 내부 원가표 — 준비중 유지 */}
+            {/* 내부 원가표 출력 — 실제 팝업 */}
             <button
-              disabled
-              className="flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 text-gray-400 text-xs rounded-lg cursor-not-allowed"
+              onClick={() => {
+                if (projItems.length === 0) { alert("품목을 먼저 추가하세요"); return; }
+                openCostSheetWindow(title, client, projectDate, projItems, exchangeRate, vatRate);
+              }}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-50 transition-colors"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="6 9 6 2 18 2 18 9"/>
@@ -814,7 +1084,6 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
                 <rect x="6" y="14" width="12" height="8"/>
               </svg>
               내부 원가표 출력
-              <span className="text-[9px] bg-gray-100 px-1 rounded">준비중</span>
             </button>
           </div>
           {projItems.length === 0 && (

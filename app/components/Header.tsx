@@ -1,6 +1,6 @@
 "use client";
 
-type Tab = "catalog" | "projects" | "quotes";
+type Tab = "catalog" | "projects" | "customer_quotes" | "orders";
 
 interface HeaderProps {
   syncStatus: "online" | "offline" | "syncing";
@@ -23,7 +23,6 @@ export default function Header({ syncStatus }: HeaderProps) {
       style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
     >
       <div className="flex items-center px-4 h-11">
-        {/* 로고 — 클릭 시 새로고침 */}
         <button
           onClick={() => window.location.reload()}
           className="font-bold text-base tracking-widest hover:opacity-70 transition-opacity"
@@ -38,20 +37,23 @@ export default function Header({ syncStatus }: HeaderProps) {
 }
 
 // ── SubHeader: 탭 + 액션 버튼 ──────────────────────────────
-// 헤더 바로 아래 고정. 탭/액션 추가 시 이 컴포넌트만 수정.
 interface SubHeaderProps {
   activeTab: Tab;
   onTabChange: (tab: Tab) => void;
   onAddItem?: () => void;
   onNewProject?: () => void;
-  onNewQuote?: () => void;
+  onNewOrder?: () => void;
 }
 
-export function SubHeader({ activeTab, onTabChange, onAddItem, onNewProject, onNewQuote }: SubHeaderProps) {
+export function SubHeader({
+  activeTab, onTabChange,
+  onAddItem, onNewProject, onNewOrder,
+}: SubHeaderProps) {
   const tabs: { key: Tab; label: string }[] = [
-    { key: "catalog",  label: "상품관리" },
-    { key: "projects", label: "프로젝트" },
-    { key: "quotes",   label: "견적서" },
+    { key: "catalog",         label: "상품관리" },
+    { key: "projects",        label: "프로젝트" },
+    { key: "customer_quotes", label: "고객견적서" },
+    { key: "orders",          label: "발주서" },
   ];
 
   return (
@@ -91,12 +93,12 @@ export function SubHeader({ activeTab, onTabChange, onAddItem, onNewProject, onN
             <span className="text-sm leading-none">+</span> 프로젝트
           </button>
         )}
-        {activeTab === "quotes" && onNewQuote && (
+        {activeTab === "orders" && onNewOrder && (
           <button
-            onClick={onNewQuote}
+            onClick={onNewOrder}
             className="flex items-center gap-1 px-3 py-1.5 bg-black text-white text-xs font-semibold rounded hover:bg-gray-800 transition-colors"
           >
-            <span className="text-sm leading-none">+</span> 견적서
+            <span className="text-sm leading-none">+</span> 발주서
           </button>
         )}
       </div>
