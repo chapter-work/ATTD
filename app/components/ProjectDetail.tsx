@@ -189,7 +189,17 @@ function openProjectQuotePrintWindow(
     .btn-close:active { background:rgba(255,255,255,0.25); }
     body { padding-top:72px; }
 
-    @page { size:A4 portrait; margin:14mm 12mm; }
+    @page {
+      size:A4 portrait;
+      margin:14mm 12mm;
+      /* 브라우저 기본 URL·날짜 헤더/푸터 제거, 페이지 번호만 우하단 표시 */
+      @top-left   { content: none; }
+      @top-right  { content: none; }
+      @top-center { content: none; }
+      @bottom-left  { content: none; }
+      @bottom-right { content: none; }
+      @bottom-center { content: counter(page) " / " counter(pages); font-size: 9pt; color: #aaa; }
+    }
     @media print {
       .toolbar { display:none !important; }
       body { padding:0 48px; }
