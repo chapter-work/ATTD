@@ -53,7 +53,7 @@ export default function CatalogTable({ items, exchangeRate, onEdit, onDelete }: 
                     <img
                       src={item.img}
                       alt={item.model}
-                      style={{width: "80px", height: "80px", objectFit: "cover", borderRadius: "6px", border: "1px solid #f0f0f0", display: "block"}}
+                      style={{width: "80px", height: "80px", objectFit: "contain", borderRadius: "6px", border: "1px solid #f0f0f0", display: "block", background: "#fafafa", padding: "4px"}}
                     />
                   ) : (
                     <div style={{width: "80px", height: "80px", background: "#f3f4f6", borderRadius: "6px", border: "1px solid #e5e7eb", display: "flex", alignItems: "center", justifyContent: "center"}}>
