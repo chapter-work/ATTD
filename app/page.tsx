@@ -50,15 +50,42 @@ export default function Home() {
     if (!error && data) setQuotes(data as Quote[]);
   }, []);
 
-  const loadProjects = useCallback(async () => {
+  const loadProjects = useCallback(async (itemsMap?: Map<string, string | null>) => {
     const { data, error } = await supabase
       .from("projects").select("*").order("created_at", { ascending: false });
-    if (!error && data) setProjects(data as Project[]);
+    if (!error && data) {
+      // snap.img가 없는 경우 itemsMap에서 보완
+      const patched = (data as Project[]).map(proj => ({
+        ...proj,
+        items: (proj.items || []).map(pi => {
+          const snapImg = pi.snap?.img;
+          if (!snapImg && itemsMap) {
+            return { ...pi, snap: { ...pi.snap, img: itemsMap.get(pi.itemId) ?? null } };
+          }
+          return pi;
+        }),
+      }));
+      setProjects(patched);
+    }
   }, []);
 
   useEffect(() => {
     setSyncStatus("syncing");
-    Promise.all([loadItems(), loadQuotes(), loadProjects()])
+    // items 먼저 로드 → imgMap 생성 → projects/quotes에 img 보완
+    const init = async () => {
+      const { data: itemData } = await supabase
+        .from("items").select("*").order("brand").order("model");
+      if (itemData) {
+        setItems(itemData as Item[]);
+        const imgMap = new Map<string, string | null>(
+          (itemData as Item[]).map(it => [it.id, it.img])
+        );
+        await Promise.all([loadQuotes(), loadProjects(imgMap)]);
+      } else {
+        await Promise.all([loadItems(), loadQuotes(), loadProjects()]);
+      }
+    };
+    init()
       .then(() => setSyncStatus("online"))
       .catch(() => setSyncStatus("offline"));
 
@@ -112,7 +139,13 @@ export default function Home() {
 
   // ── 견적서 CRUD ───────────────────────────────────────
   const handleSaveQuote = async (quoteData: Partial<Quote>) => {
-    const payload = { ...quoteData, updated_at: new Date().toISOString() };
+    // snap.img 항상 최신 items에서 보완하여 저장
+    const imgMap = new Map<string, string | null>(items.map(it => [it.id, it.img]));
+    const patchedItems = (quoteData.items || []).map(qi => ({
+      ...qi,
+      snap: { ...qi.snap, img: qi.snap?.img || imgMap.get(qi.itemId) || null },
+    }));
+    const payload = { ...quoteData, items: patchedItems, updated_at: new Date().toISOString() };
     if (editingQuote?.id) {
       await supabase.from("quotes").update(payload).eq("id", editingQuote.id);
     } else {
@@ -131,7 +164,13 @@ export default function Home() {
 
   // ── 프로젝트 CRUD ─────────────────────────────────────
   const handleSaveProject = async (projectData: Partial<Project>) => {
-    const payload = { ...projectData, updated_at: new Date().toISOString() };
+    // snap.img 항상 최신 items에서 보완하여 저장
+    const imgMap = new Map<string, string | null>(items.map(it => [it.id, it.img]));
+    const patchedItems = (projectData.items || []).map(pi => ({
+      ...pi,
+      snap: { ...pi.snap, img: pi.snap?.img || imgMap.get(pi.itemId) || null },
+    }));
+    const payload = { ...projectData, items: patchedItems, updated_at: new Date().toISOString() };
     if (projectData.id) {
       const { error } = await supabase.from("projects").update(payload).eq("id", projectData.id);
       if (error) { alert("저장 오류: " + error.message); return; }
