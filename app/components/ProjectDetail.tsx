@@ -74,7 +74,7 @@ function openProjectQuotePrintWindow(
   const rowsHtml = projItems.map((pi, i) => {
     const c = calcs[i];
     const imgHtml = pi.snap.img
-      ? `<img src="${pi.snap.img}" style="width:52px;height:52px;object-fit:cover;border-radius:4px;" />`
+      ? `<img src="${pi.snap.img}" style="width:52px;height:52px;object-fit:contain;border-radius:4px;background:#fafafa;padding:3px;" />`
       : `<div style="width:52px;height:52px;background:#f0f0f0;border-radius:4px;"></div>`;
 
     return `
@@ -598,9 +598,9 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
                         </td>
                         <td className="px-3 py-2.5 align-top">
                           <div className="flex items-start gap-2">
-                            <div className="flex-shrink-0 w-16 h-16 rounded border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center">
+                            <div className="flex-shrink-0 w-16 h-16 rounded border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center" style={{padding:"3px"}}>
                               {pi.snap.img ? (
-                                <img src={pi.snap.img} alt={pi.snap.model} className="w-full h-full object-cover" />
+                                <img src={pi.snap.img} alt={pi.snap.model} className="w-full h-full object-contain" style={{borderRadius:"4px"}} />
                               ) : (
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5">
                                   <rect x="3" y="3" width="18" height="18" rx="2"/>

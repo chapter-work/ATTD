@@ -225,7 +225,7 @@ export default function QuoteBuilder({
                         <td className="py-2 text-gray-300 text-[10px]">{i + 1}</td>
                         <td className="py-2 pr-1">
                           {qi.snap.img
-                            ? <img src={qi.snap.img} alt={qi.snap.model} className="w-12 h-12 object-cover rounded" />
+                            ? <img src={qi.snap.img} alt={qi.snap.model} className="w-12 h-12 object-contain rounded" style={{padding:"2px", background:"#fafafa"}} />
                             : <div className="w-12 h-12 bg-gray-100 rounded" />}
                         </td>
                         <td className="py-2">
@@ -402,7 +402,7 @@ export default function QuoteBuilder({
                     >
                       {item.img
                         ? <img src={item.img} alt={item.model}
-                            className="w-12 h-12 object-cover rounded flex-shrink-0" />
+                            className="w-12 h-12 object-contain rounded flex-shrink-0" />
                         : <div className="w-12 h-12 bg-gray-100 rounded flex-shrink-0" />}
                       <div className="min-w-0 flex-1">
                         <div className="text-[10px] font-semibold text-gray-400">{item.brand}</div>

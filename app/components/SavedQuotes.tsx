@@ -51,7 +51,7 @@ function openPrintWindow(quote: Quote) {
     const krwUnit   = fKrw(unit, exchangeRate);
     const krwTotal  = fKrw(total, exchangeRate);
     const imgHtml   = qi.snap?.img
-      ? `<img src="${qi.snap.img}" style="width:52px;height:52px;object-fit:cover;border-radius:4px;" />`
+      ? `<img src="${qi.snap.img}" style="width:52px;height:52px;object-fit:contain;border-radius:4px;background:#fafafa;padding:3px;" />`
       : `<div style="width:52px;height:52px;background:#f0f0f0;border-radius:4px;"></div>`;
 
     // 단가 셀
@@ -531,7 +531,7 @@ function QuotePreview({ quote }: { quote: Quote }) {
                   <td className="py-2 px-1 text-gray-400 text-[10px] align-top">{i + 1}</td>
                   <td className="py-2 px-1 align-top">
                     {qi.snap?.img
-                      ? <img src={qi.snap.img} alt={qi.snap.model} className="w-12 h-12 object-cover rounded" />
+                      ? <img src={qi.snap.img} alt={qi.snap.model} className="w-12 h-12 object-contain rounded" style={{padding:"2px", background:"#fafafa"}} />
                       : <div className="w-12 h-12 bg-gray-100 rounded" />}
                   </td>
                   <td className="py-2 px-1 align-top">
