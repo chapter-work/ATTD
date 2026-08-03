@@ -22,10 +22,10 @@ export default function CatalogTable({ items, exchangeRate, onEdit, onDelete }: 
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm border-collapse">
+      <table className="text-sm border-collapse" style={{minWidth: "820px", width: "100%"}}>
         <thead>
           <tr className="bg-[#111] text-white text-xs">
-            <th className="w-24 px-2 py-3 text-left font-medium">사진</th>
+            <th className="px-2 py-3 text-left font-medium" style={{width: "96px", minWidth: "96px"}}>사진</th>
             <th className="px-3 py-3 text-left font-medium whitespace-nowrap">브랜드</th>
             <th className="px-3 py-3 text-left font-medium whitespace-nowrap">모델명 / 코드</th>
             <th className="px-3 py-3 text-left font-medium whitespace-nowrap">카테고리</th>
@@ -48,15 +48,15 @@ export default function CatalogTable({ items, exchangeRate, onEdit, onDelete }: 
                 }`}
               >
                 {/* 사진 */}
-                <td className="px-2 py-2">
+                <td className="px-2 py-2" style={{width: "96px", minWidth: "96px"}}>
                   {item.img ? (
                     <img
                       src={item.img}
                       alt={item.model}
-                      className="w-20 h-20 object-cover rounded border border-gray-100"
+                      style={{width: "80px", height: "80px", objectFit: "cover", borderRadius: "6px", border: "1px solid #f0f0f0", display: "block"}}
                     />
                   ) : (
-                    <div className="w-20 h-20 bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
+                    <div style={{width: "80px", height: "80px", background: "#f3f4f6", borderRadius: "6px", border: "1px solid #e5e7eb", display: "flex", alignItems: "center", justifyContent: "center"}}>
                       <span className="text-gray-300 text-xs">NO IMG</span>
                     </div>
                   )}
