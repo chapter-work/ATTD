@@ -96,6 +96,8 @@ export default function QuoteBuilder({
         title, client, quote_date: quoteDate,
         currency, exchange_rate: exchangeRate, items: quoteItems,
       });
+      // 저장 완료 후 폼 초기화 (새 발주서 상태)
+      onNewQuote();
     } finally {
       setSaving(false);
     }
