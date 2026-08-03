@@ -383,6 +383,7 @@ export default function Home() {
               }}
               onDelete={handleDeleteCustomerQuote}
               readOnly
+              compact
             />
           </div>
         </div>
