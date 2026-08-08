@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  Project, ProjectItem, ProjectStatus,
+  Project, ProjectItem, ProjectCosts, ProjectStatus,
   Item, Quote, QuoteItem,
   calcProjectItem, calcProjectSummary,
   fEur, fKrw, fKrwFull, discountedPrice,
@@ -41,7 +41,7 @@ function InlineInput({
   );
 }
 
-// ── 고객 견적서 인쇄 팝업 (SavedQuotes의 openPrintWindow와 동일 양식) ──
+// ── 고객 견적서 인쇄 팝업 ──────────────────────────────────
 const TERMS = [
   "본 견적은 해외 프리미엄 브랜드의 정품 제품을 기준으로 작성되었습니다.",
   "계약은 상품대금 100% 결제 완료 시 성립되며, 계약 완료와 동시에 해외 제조사로 주문이 진행됩니다.",
@@ -66,11 +66,9 @@ function openProjectQuotePrintWindow(
   exchangeRate: number,
   vatRate: number,
 ) {
-  /* ── 행 계산 ── */
   const calcs = projItems.map(pi => calcProjectItem(pi, exchangeRate, vatRate));
   const totalKrw = calcs.reduce((s, c) => s + c.sell_price_total, 0);
 
-  /* ── 품목 행 HTML ── */
   const rowsHtml = projItems.map((pi, i) => {
     const c = calcs[i];
     const imgHtml = pi.snap.img
@@ -96,14 +94,12 @@ function openProjectQuotePrintWindow(
       </tr>`;
   }).join("");
 
-  /* ── 합계 HTML ── */
   const totalHtml = `
     <div style="display:flex;align-items:flex-end;gap:8px;">
       <div style="font-size:11px;color:#999;padding-bottom:2px;">합계</div>
       <div style="font-size:13px;font-weight:700;color:#111;">${fKrwFull(totalKrw)}</div>
     </div>`;
 
-  /* ── Terms HTML ── */
   const termsHtml = TERMS.map((t, i) => `
     <li style="display:flex;gap:8px;font-size:10px;color:#666;line-height:1.6;margin-bottom:5px;">
       <span style="font-weight:700;color:#555;flex-shrink:0;">${i + 1}.</span>
@@ -114,7 +110,6 @@ function openProjectQuotePrintWindow(
     `<p style="font-size:10px;color:#666;line-height:1.7;margin:0 0 6px 0;">${p}</p>`
   ).join("");
 
-  /* ── 전체 HTML ── */
   const html = `<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -123,22 +118,15 @@ function openProjectQuotePrintWindow(
   <title>ATTD 견적서 — ${title}</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    body {
-      font-family: -apple-system,'Helvetica Neue',Arial,sans-serif;
-      color:#111; background:#fff;
-      padding:40px 48px; max-width:800px; margin:0 auto;
-    }
-
+    body { font-family: -apple-system,'Helvetica Neue',Arial,sans-serif; color:#111; background:#fff; padding:40px 48px; max-width:800px; margin:0 auto; }
     .attd-header { padding-top:28px; padding-bottom:22px; border-bottom:2px solid #111; margin-bottom:28px; }
     .attd-brand  { font-size:38px; font-weight:900; letter-spacing:0.18em; color:#111; line-height:1; }
     .attd-sub    { font-size:13px; font-weight:300; letter-spacing:0.08em; color:#666; margin-top:6px; }
     .attd-by     { font-size:11px; letter-spacing:0.06em; color:#aaa; margin-top:3px; }
-
     .quote-info   { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; }
     .quote-title  { font-size:18px; font-weight:800; color:#111; }
     .quote-client { font-size:14px; font-weight:700; color:#111; margin-top:4px; }
     .quote-meta   { text-align:right; font-size:12px; color:#888; line-height:1.6; }
-
     table         { width:100%; border-collapse:collapse; margin-bottom:0; }
     thead tr      { border-top:1.5px solid #111; border-bottom:1.5px solid #111; }
     th            { padding:8px 6px; font-size:11px; font-weight:700; color:#333; }
@@ -150,154 +138,80 @@ function openProjectQuotePrintWindow(
     th:nth-child(6){ text-align:center; width:40px; }
     th:nth-child(7){ text-align:right; width:110px; }
     tbody tr      { border-bottom:1px solid #eee; }
-
-    .totals       { display:flex; justify-content:flex-end; gap:32px;
-                    border-top:2px solid #111; border-bottom:2px solid #111;
-                    padding:10px 0; margin-top:0; margin-bottom:28px; }
-
+    .totals       { display:flex; justify-content:flex-end; gap:32px; border-top:2px solid #111; border-bottom:2px solid #111; padding:10px 0; margin-top:0; margin-bottom:28px; }
     .sign-section { margin-bottom:32px; padding:22px 0 0 0; }
     .sign-row     { display:flex; gap:20px; align-items:flex-end; }
     .sign-box     { flex:0 0 calc(33.33% - 14px); width:calc(33.33% - 14px); }
-    .sign-label   { font-size:9px; color:#aaa; margin-bottom:12px;
-                    letter-spacing:0.14em; font-weight:600; text-transform:uppercase; }
+    .sign-label   { font-size:9px; color:#aaa; margin-bottom:12px; letter-spacing:0.14em; font-weight:600; text-transform:uppercase; }
     .sign-line    { min-height:40px; border-bottom:1.5px solid #111; }
-
     .tc-section   { padding-top:4px; }
-    .tc-title     { font-size:11px; font-weight:800; letter-spacing:0.12em; color:#444;
-                    text-transform:uppercase; margin-bottom:10px; }
+    .tc-title     { font-size:11px; font-weight:800; letter-spacing:0.12em; color:#444; text-transform:uppercase; margin-bottom:10px; }
     .tc-list      { list-style:none; padding:0; }
     .tc-footer    { margin-top:16px; padding-top:14px; border-top:1px solid #eee; }
-
-    .toolbar {
-      position:fixed; top:0; left:0; right:0; height:52px;
-      background:#111; display:flex; align-items:center;
-      justify-content:space-between; padding:0 16px; z-index:999;
-    }
+    .toolbar { position:fixed; top:0; left:0; right:0; height:52px; background:#111; display:flex; align-items:center; justify-content:space-between; padding:0 16px; z-index:999; }
     .toolbar-title  { font-size:13px; font-weight:700; color:#fff; letter-spacing:0.12em; }
     .toolbar-actions{ display:flex; gap:8px; align-items:center; }
-    .btn-print {
-      display:flex; align-items:center; gap:6px;
-      background:#fff; color:#111; border:none; border-radius:8px;
-      padding:7px 14px; font-size:12px; font-weight:700; cursor:pointer;
-    }
+    .btn-print { display:flex; align-items:center; gap:6px; background:#fff; color:#111; border:none; border-radius:8px; padding:7px 14px; font-size:12px; font-weight:700; cursor:pointer; }
     .btn-print:active { background:#e5e5e5; }
-    .btn-close {
-      display:flex; align-items:center; justify-content:center;
-      width:34px; height:34px; background:rgba(255,255,255,0.12);
-      color:#fff; border:none; border-radius:50%; font-size:18px; cursor:pointer;
-    }
-    .btn-close:active { background:rgba(255,255,255,0.25); }
+    .btn-close { display:flex; align-items:center; justify-content:center; width:34px; height:34px; background:rgba(255,255,255,0.12); color:#fff; border:none; border-radius:50%; font-size:18px; cursor:pointer; }
     body { padding-top:72px; }
-
-    @page {
-      size:A4 portrait;
-      margin:14mm 12mm;
-      /* 브라우저 기본 URL·날짜 헤더/푸터 제거, 페이지 번호만 우하단 표시 */
-      @top-left   { content: none; }
-      @top-right  { content: none; }
-      @top-center { content: none; }
-      @bottom-left  { content: none; }
-      @bottom-right { content: none; }
-      @bottom-center { content: counter(page) " / " counter(pages); font-size: 9pt; color: #aaa; }
-    }
-    @media print {
-      .toolbar { display:none !important; }
-      body { padding:0 48px; }
-    }
-    /* 모바일 대응 */
-    @media (max-width: 600px) {
-      body { padding: 72px 12px 20px; }
-      .attd-brand { font-size: 28px; }
-      th, td { font-size: 10px !important; padding: 7px 3px !important; }
-      th:nth-child(4) { display: none; }  /* 피니쉬 모바일 숨김 */
-      td:nth-child(4) { display: none; }  /* 피니쉬 td 모바일 숨김 */
-    }
+    @page { size:A4 portrait; margin:14mm 12mm; }
+    @media print { .toolbar { display:none !important; } body { padding:0 48px; } }
   </style>
 </head>
 <body>
-
   <div class="toolbar">
     <span class="toolbar-title">ATTD 견적서</span>
     <div class="toolbar-actions">
       <button class="btn-print" onclick="window.print()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <polyline points="6 9 6 2 18 2 18 9"/>
-          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-          <rect x="6" y="14" width="12" height="8"/>
-        </svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         인쇄 / PDF 저장
       </button>
       <button class="btn-close" onclick="window.close()" title="닫기">✕</button>
     </div>
   </div>
-
   <div class="attd-header">
     <div class="attd-brand">ATTD</div>
     <div class="attd-sub">Private Furniture Curation</div>
     <div class="attd-by">by Chapter Design</div>
   </div>
-
   <div class="quote-info">
     <div>
       <div class="quote-title">${title || "견적서"}</div>
       ${client ? `<div class="quote-client">${client}</div>` : ""}
     </div>
-    <div class="quote-meta">
-      ${projectDate ? `<div>${projectDate}</div>` : ""}
-    </div>
+    <div class="quote-meta">${projectDate ? `<div>${projectDate}</div>` : ""}</div>
   </div>
-
   <table>
     <thead>
       <tr>
-        <th>No.</th>
-        <th>사진</th>
-        <th>브랜드 / 모델</th>
-        <th>피니쉬</th>
-        <th style="text-align:right;">단가</th>
-        <th style="text-align:center;">수량</th>
-        <th style="text-align:right;">합계</th>
+        <th>No.</th><th>사진</th><th>브랜드 / 모델</th><th>피니쉬</th>
+        <th style="text-align:right;">단가</th><th style="text-align:center;">수량</th><th style="text-align:right;">합계</th>
       </tr>
     </thead>
     <tbody>${rowsHtml}</tbody>
   </table>
-
   <div class="totals">${totalHtml}</div>
-
   <div class="sign-section">
     <div class="sign-row">
-      <div class="sign-box">
-        <div class="sign-label">DATE</div>
-        <div class="sign-line"></div>
-      </div>
-      <div class="sign-box">
-        <div class="sign-label">NAME</div>
-        <div class="sign-line"></div>
-      </div>
-      <div class="sign-box">
-        <div class="sign-label">SIGNATURE</div>
-        <div class="sign-line"></div>
-      </div>
+      <div class="sign-box"><div class="sign-label">DATE</div><div class="sign-line"></div></div>
+      <div class="sign-box"><div class="sign-label">NAME</div><div class="sign-line"></div></div>
+      <div class="sign-box"><div class="sign-label">SIGNATURE</div><div class="sign-line"></div></div>
     </div>
   </div>
-
   <div class="tc-section">
     <div class="tc-title">Terms &amp; Conditions</div>
     <ol class="tc-list">${termsHtml}</ol>
     <div class="tc-footer">${footerHtml}</div>
   </div>
-
 </body>
 </html>`;
 
   const win = window.open("", "_blank", "width=900,height=1200");
-  if (win) {
-    win.document.write(html);
-    win.document.close();
-  }
+  if (win) { win.document.write(html); win.document.close(); }
 }
 
-// ── 내부 원가표 인쇄 팝업 ──────────────────────────────────
+// ── 내부 원가표 인쇄 팝업 (새 부대비 구조 반영) ──────────────
 function openCostSheetWindow(
   title: string,
   client: string,
@@ -305,16 +219,17 @@ function openCostSheetWindow(
   projItems: ProjectItem[],
   exchangeRate: number,
   vatRate: number,
+  costs: Partial<ProjectCosts>,
+  baseMargin: number,
 ) {
   const calcs   = projItems.map(pi => calcProjectItem(pi, exchangeRate, vatRate));
-  const summary = calcProjectSummary(projItems, exchangeRate, vatRate);
+  const summary = calcProjectSummary(projItems, exchangeRate, vatRate, costs, baseMargin);
 
   const rowsHtml = projItems.map((pi, i) => {
     const c = calcs[i];
     const imgHtml = pi.snap.img
       ? `<img src="${pi.snap.img}" style="width:44px;height:44px;object-fit:contain;border-radius:4px;background:#fafafa;padding:3px;display:block;" />`
       : `<div style="width:44px;height:44px;background:#f0f0f0;border-radius:4px;"></div>`;
-
     return `
       <tr>
         <td style="padding:8px 5px;color:#aaa;font-size:10px;vertical-align:top;">${i + 1}</td>
@@ -333,15 +248,6 @@ function openCostSheetWindow(
           <div style="font-weight:600;color:#333;">${fKrwFull(c.cost_krw)}</div>
           ${pi.qty > 1 ? `<div style="color:#aaa;font-size:9px;">합 ${fKrwFull(c.cost_krw_total)}</div>` : ""}
         </td>
-        <td style="padding:8px 5px;vertical-align:top;text-align:center;font-size:10px;color:#555;">${pi.supply_cost_rate}%</td>
-        <td style="padding:8px 5px;vertical-align:top;text-align:right;font-size:10px;white-space:nowrap;">
-          <div style="color:#555;">${fKrwFull(c.supply_cost)}</div>
-          ${pi.qty > 1 ? `<div style="color:#aaa;font-size:9px;">합 ${fKrwFull(c.supply_cost_total)}</div>` : ""}
-        </td>
-        <td style="padding:8px 5px;vertical-align:top;text-align:right;font-size:10px;white-space:nowrap;">
-          <div style="font-weight:700;color:#111;">${fKrwFull(c.total_cost)}</div>
-          ${pi.qty > 1 ? `<div style="color:#aaa;font-size:9px;">합 ${fKrwFull(c.total_cost_total)}</div>` : ""}
-        </td>
         <td style="padding:8px 5px;vertical-align:top;text-align:center;font-size:10px;color:#555;">${pi.sell_margin}%</td>
         <td style="padding:8px 5px;vertical-align:top;text-align:right;font-size:10px;white-space:nowrap;">
           <div style="font-weight:700;color:#111;">${fKrwFull(c.sell_price)}</div>
@@ -353,103 +259,70 @@ function openCostSheetWindow(
       </tr>`;
   }).join("");
 
+  // 부대비용 상세 행
+  const costRows = [
+    ["이태리 현지 물류비", summary.cost_local_logistics],
+    ["해상운임 / 항공운임", summary.cost_freight],
+    ["국내 부대비용 (THC/DOC/관세 등)", summary.cost_domestic_customs],
+    ["국내 물류비용 (TRUCKING 등)", summary.cost_domestic_delivery],
+    ["시공비", summary.cost_installation],
+    ["기타 / 보험료", summary.cost_other],
+  ].filter(([, v]) => (v as number) > 0).map(([label, v]) => `
+    <tr>
+      <td style="padding:5px 8px;font-size:10px;color:#555;">${label}</td>
+      <td style="padding:5px 8px;font-size:10px;text-align:right;color:#333;font-weight:600;">${fKrwFull(v as number)}</td>
+    </tr>`).join("");
+
   const html = `<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ATTD 내부 원가표 — ${title}</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    body {
-      font-family: -apple-system,'Helvetica Neue',Arial,sans-serif;
-      color:#111; background:#fff;
-      padding:36px 40px; max-width:1100px; margin:0 auto;
-    }
-
+    body { font-family:-apple-system,'Helvetica Neue',Arial,sans-serif; color:#111; background:#fff; padding:36px 40px; max-width:1100px; margin:0 auto; }
     .doc-header { padding-top:24px; padding-bottom:16px; border-bottom:2px solid #111; margin-bottom:20px; display:flex; justify-content:space-between; align-items:flex-end; }
     .doc-brand  { font-size:32px; font-weight:900; letter-spacing:0.18em; color:#111; line-height:1; }
     .doc-sub    { font-size:11px; font-weight:300; letter-spacing:0.08em; color:#888; margin-top:4px; }
     .doc-badge  { font-size:10px; font-weight:700; letter-spacing:0.14em; background:#111; color:#fff; padding:4px 10px; border-radius:4px; text-transform:uppercase; }
-
-    .meta-row   { display:flex; gap:32px; margin-bottom:18px; }
+    .meta-row   { display:flex; gap:32px; margin-bottom:18px; flex-wrap:wrap; }
     .meta-item  { display:flex; flex-direction:column; gap:2px; }
     .meta-label { font-size:8px; font-weight:700; color:#aaa; letter-spacing:0.12em; text-transform:uppercase; }
     .meta-value { font-size:12px; font-weight:700; color:#111; }
+    table       { width:100%; border-collapse:collapse; font-size:11px; }
+    thead tr    { background:#f8f8f8; border-top:1.5px solid #111; border-bottom:1.5px solid #111; }
+    th          { padding:7px 5px; font-size:9px; font-weight:700; color:#555; white-space:nowrap; }
+    th.r { text-align:right; } th.c { text-align:center; } th.l { text-align:left; }
+    tbody tr    { border-bottom:1px solid #eee; }
 
-    table         { width:100%; border-collapse:collapse; font-size:11px; }
-    thead tr      { background:#f8f8f8; border-top:1.5px solid #111; border-bottom:1.5px solid #111; }
-    th            { padding:7px 5px; font-size:9px; font-weight:700; color:#555; white-space:nowrap; }
-    th.r          { text-align:right; }
-    th.c          { text-align:center; }
-    th.l          { text-align:left; }
-    tbody tr      { border-bottom:1px solid #eee; }
-    tbody tr:hover{ background:#fafafa; }
+    /* 요약 섹션 */
+    .summary-wrap { display:flex; gap:24px; margin-top:0; flex-wrap:wrap; border-top:2px solid #111; border-bottom:2px solid #111; padding:12px 0; margin-bottom:0; }
+    .summary-block { flex:1; min-width:200px; }
+    .summary-block-title { font-size:8px; font-weight:700; color:#aaa; letter-spacing:0.12em; text-transform:uppercase; margin-bottom:8px; padding-bottom:4px; border-bottom:1px solid #eee; }
+    .sum-row    { display:flex; justify-content:space-between; align-items:center; padding:3px 0; font-size:10px; }
+    .sum-lbl    { color:#666; }
+    .sum-val    { font-weight:700; color:#111; white-space:nowrap; }
+    .sum-val.green { color:#059669; } .sum-val.red { color:#dc2626; } .sum-val.blue { color:#2563eb; }
+    .sum-row.total { border-top:1.5px solid #111; margin-top:4px; padding-top:6px; font-size:11px; }
+    .sum-row.total .sum-lbl { font-weight:700; color:#111; }
 
-    .summary-bar {
-      display:flex; gap:16px; flex-wrap:wrap;
-      border-top:2px solid #111; border-bottom:2px solid #111;
-      padding:10px 0; margin-top:0; margin-bottom:0;
-      justify-content:flex-end;
-    }
-    .sum-item   { display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
-    .sum-label  { font-size:8px; color:#aaa; font-weight:600; text-transform:uppercase; letter-spacing:0.1em; }
-    .sum-value  { font-size:12px; font-weight:800; color:#111; white-space:nowrap; }
-    .sum-value.green { color:#059669; }
-    .sum-value.red   { color:#dc2626; }
-    .sum-value.blue  { color:#2563eb; }
+    .confidential { margin-top:20px; padding:10px 14px; background:#fff7ed; border:1px solid #fed7aa; border-radius:6px; display:flex; align-items:center; gap:8px; }
+    .conf-icon { font-size:14px; }
+    .conf-text { font-size:9px; color:#9a3412; line-height:1.5; }
 
-    .confidential {
-      margin-top:20px; padding:10px 14px; background:#fff7ed; border:1px solid #fed7aa;
-      border-radius:6px; display:flex; align-items:center; gap:8px;
-    }
-    .conf-icon  { font-size:14px; }
-    .conf-text  { font-size:9px; color:#9a3412; line-height:1.5; }
-
-    .toolbar {
-      position:fixed; top:0; left:0; right:0; height:50px;
-      background:#111; display:flex; align-items:center;
-      justify-content:space-between; padding:0 16px; z-index:999;
-    }
+    .toolbar { position:fixed; top:0; left:0; right:0; height:50px; background:#111; display:flex; align-items:center; justify-content:space-between; padding:0 16px; z-index:999; }
     .toolbar-left  { display:flex; align-items:center; gap:10px; }
     .toolbar-title { font-size:13px; font-weight:700; color:#fff; letter-spacing:0.12em; }
     .toolbar-badge { font-size:9px; font-weight:700; color:#111; background:#f59e0b; border-radius:3px; padding:2px 7px; letter-spacing:0.1em; }
     .toolbar-actions { display:flex; gap:8px; align-items:center; }
-    .btn-print {
-      display:flex; align-items:center; gap:6px;
-      background:#fff; color:#111; border:none; border-radius:7px;
-      padding:6px 13px; font-size:11px; font-weight:700; cursor:pointer;
-    }
-    .btn-print:active { background:#e5e5e5; }
-    .btn-close {
-      display:flex; align-items:center; justify-content:center;
-      width:32px; height:32px; background:rgba(255,255,255,0.12);
-      color:#fff; border:none; border-radius:50%; font-size:17px; cursor:pointer;
-    }
+    .btn-print { display:flex; align-items:center; gap:6px; background:#fff; color:#111; border:none; border-radius:7px; padding:6px 13px; font-size:11px; font-weight:700; cursor:pointer; }
+    .btn-close { display:flex; align-items:center; justify-content:center; width:32px; height:32px; background:rgba(255,255,255,0.12); color:#fff; border:none; border-radius:50%; font-size:17px; cursor:pointer; }
     body { padding-top:68px; }
-
-    @page {
-      size:A3 landscape;
-      margin:10mm 8mm;
-      @top-left   { content: none; }
-      @top-right  { content: none; }
-      @top-center { content: none; }
-      @bottom-left  { content: none; }
-      @bottom-right { content: none; }
-      @bottom-center { content: counter(page) " / " counter(pages); font-size:8pt; color:#aaa; }
-    }
-    @media print {
-      .toolbar { display:none !important; }
-      body { padding:0 36px; }
-    }
-    @media (max-width:900px) {
-      body { padding:68px 10px 20px; }
-      th, td { font-size:9px !important; padding:6px 3px !important; }
-    }
+    @page { size:A3 landscape; margin:10mm 8mm; }
+    @media print { .toolbar { display:none !important; } body { padding:0 36px; } }
   </style>
 </head>
 <body>
-
   <div class="toolbar">
     <div class="toolbar-left">
       <span class="toolbar-title">ATTD</span>
@@ -457,11 +330,7 @@ function openCostSheetWindow(
     </div>
     <div class="toolbar-actions">
       <button class="btn-print" onclick="window.print()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <polyline points="6 9 6 2 18 2 18 9"/>
-          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-          <rect x="6" y="14" width="12" height="8"/>
-        </svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         인쇄 / PDF 저장
       </button>
       <button class="btn-close" onclick="window.close()" title="닫기">✕</button>
@@ -477,26 +346,12 @@ function openCostSheetWindow(
   </div>
 
   <div class="meta-row">
-    <div class="meta-item">
-      <div class="meta-label">프로젝트명</div>
-      <div class="meta-value">${title || "—"}</div>
-    </div>
-    <div class="meta-item">
-      <div class="meta-label">고객명</div>
-      <div class="meta-value">${client || "—"}</div>
-    </div>
-    <div class="meta-item">
-      <div class="meta-label">견적일</div>
-      <div class="meta-value">${projectDate || "—"}</div>
-    </div>
-    <div class="meta-item">
-      <div class="meta-label">환율 (KRW/EUR)</div>
-      <div class="meta-value">₩ ${exchangeRate.toLocaleString("ko-KR")}</div>
-    </div>
-    <div class="meta-item">
-      <div class="meta-label">총 품목 수</div>
-      <div class="meta-value">${summary.item_count}개 (${projItems.length}종)</div>
-    </div>
+    <div class="meta-item"><div class="meta-label">프로젝트명</div><div class="meta-value">${title || "—"}</div></div>
+    <div class="meta-item"><div class="meta-label">고객명</div><div class="meta-value">${client || "—"}</div></div>
+    <div class="meta-item"><div class="meta-label">견적일</div><div class="meta-value">${projectDate || "—"}</div></div>
+    <div class="meta-item"><div class="meta-label">환율 (KRW/EUR)</div><div class="meta-value">₩ ${exchangeRate.toLocaleString("ko-KR")}</div></div>
+    <div class="meta-item"><div class="meta-label">기본 마진율</div><div class="meta-value">${baseMargin}%</div></div>
+    <div class="meta-item"><div class="meta-label">총 품목 수</div><div class="meta-value">${summary.item_count}개 (${projItems.length}종)</div></div>
   </div>
 
   <table>
@@ -508,41 +363,37 @@ function openCostSheetWindow(
         <th class="c" style="width:36px;">수량</th>
         <th class="r" style="width:90px;">공급가<br/><span style="font-weight:400;color:#aaa;">EUR</span></th>
         <th class="r" style="width:90px;">환산 원가<br/><span style="font-weight:400;color:#aaa;">KRW</span></th>
-        <th class="c" style="width:52px;">부대<br/>비율</th>
-        <th class="r" style="width:88px;">부대비<br/><span style="font-weight:400;color:#aaa;">KRW</span></th>
-        <th class="r" style="width:96px;">총 원가<br/><span style="font-weight:400;color:#aaa;">KRW</span></th>
         <th class="c" style="width:52px;">마진율</th>
-        <th class="r" style="width:96px;">판매단가<br/><span style="font-weight:400;color:#aaa;">KRW</span></th>
-        <th class="r" style="width:96px;">이익금액<br/><span style="font-weight:400;color:#aaa;">KRW</span></th>
+        <th class="r" style="width:96px;">참고 판매단가<br/><span style="font-weight:400;color:#aaa;">KRW (품목별)</span></th>
+        <th class="r" style="width:96px;">참고 이익금액<br/><span style="font-weight:400;color:#aaa;">KRW</span></th>
       </tr>
     </thead>
     <tbody>${rowsHtml}</tbody>
   </table>
 
-  <div class="summary-bar">
-    <div class="sum-item">
-      <div class="sum-label">유럽 총액</div>
-      <div class="sum-value">€ ${summary.total_eur.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+  <div class="summary-wrap">
+    <!-- 제품 원가 -->
+    <div class="summary-block">
+      <div class="summary-block-title">제품 원가</div>
+      <div class="sum-row"><span class="sum-lbl">유럽 총액 (EUR)</span><span class="sum-val">€ ${summary.total_eur.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
+      <div class="sum-row total"><span class="sum-lbl">제품 원가 합계</span><span class="sum-val">${fKrwFull(summary.total_product_krw)}</span></div>
     </div>
-    <div class="sum-item">
-      <div class="sum-label">총 원가</div>
-      <div class="sum-value">${fKrwFull(summary.total_cost_krw)}</div>
+    <!-- 부대비용 -->
+    <div class="summary-block">
+      <div class="summary-block-title">부대비용</div>
+      <table style="width:100%;border-collapse:collapse;">
+        <tbody>${costRows || '<tr><td colspan="2" style="padding:5px 8px;font-size:10px;color:#aaa;">항목 없음</td></tr>'}</tbody>
+      </table>
+      <div class="sum-row total"><span class="sum-lbl">부대비용 합계</span><span class="sum-val">${fKrwFull(summary.total_additional_costs)}</span></div>
     </div>
-    <div class="sum-item">
-      <div class="sum-label">총 부대비</div>
-      <div class="sum-value">${fKrwFull(summary.total_supply)}</div>
-    </div>
-    <div class="sum-item">
-      <div class="sum-label">총 고객 판매가</div>
-      <div class="sum-value blue">${fKrwFull(summary.total_sell)}</div>
-    </div>
-    <div class="sum-item">
-      <div class="sum-label">총 이익금액</div>
-      <div class="sum-value ${summary.total_profit >= 0 ? "green" : "red"}">${fKrwFull(summary.total_profit)}</div>
-    </div>
-    <div class="sum-item">
-      <div class="sum-label">평균 마진율</div>
-      <div class="sum-value ${summary.avg_margin >= 20 ? "green" : "red"}">${summary.avg_margin.toFixed(1)}%</div>
+    <!-- 수익 요약 -->
+    <div class="summary-block">
+      <div class="summary-block-title">수익 요약</div>
+      <div class="sum-row"><span class="sum-lbl">실제 총원가</span><span class="sum-val">${fKrwFull(summary.total_cost_krw)}</span></div>
+      <div class="sum-row"><span class="sum-lbl">마진율 (${baseMargin}%)</span><span class="sum-val">÷ (1 - ${baseMargin}%)</span></div>
+      <div class="sum-row total"><span class="sum-lbl">고객 판매가</span><span class="sum-val blue">${fKrwFull(summary.total_sell)}</span></div>
+      <div class="sum-row"><span class="sum-lbl">수익금액</span><span class="sum-val ${summary.total_profit >= 0 ? "green" : "red"}">${fKrwFull(summary.total_profit)}</span></div>
+      <div class="sum-row"><span class="sum-lbl">실현 마진율</span><span class="sum-val ${summary.avg_margin >= 20 ? "green" : "red"}">${summary.avg_margin.toFixed(1)}%</span></div>
     </div>
   </div>
 
@@ -553,15 +404,11 @@ function openCostSheetWindow(
       본 문서에 기재된 원가, 마진, 이익금액 정보는 외부에 노출 시 영업상 손해가 발생할 수 있습니다.
     </div>
   </div>
-
 </body>
 </html>`;
 
   const win = window.open("", "_blank", "width=1200,height=900");
-  if (win) {
-    win.document.write(html);
-    win.document.close();
-  }
+  if (win) { win.document.write(html); win.document.close(); }
 }
 
 
@@ -579,11 +426,50 @@ function makeProjectItem(item: Item, baseMargin: number): ProjectItem {
     itemId: item.id,
     qty: 1,
     price_eur: discountedPrice(item.price_eur, item.discount ?? 0),
-    supply_cost_rate: 20,
+    supply_cost_rate: 0,   // 레거시 — 계산에서 미사용
     sell_margin: baseMargin,
     domestic_retail: 0,
     snap: item,
   };
+}
+
+// ── 부대비 초기값 ──────────────────────────────────────────
+const DEFAULT_COSTS: ProjectCosts = {
+  cost_local_logistics:   0,
+  cost_freight:           0,
+  cost_domestic_customs:  0,
+  cost_domestic_delivery: 0,
+  cost_installation:      300000,
+  cost_other:             0,
+};
+
+// ── 숫자 포맷 인풋 (KRW 단위) ─────────────────────────────
+function CostInput({
+  label, desc, value, onChange
+}: {
+  label: string; desc: string; value: number; onChange: (v: number) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <label className="text-[10px] text-gray-500 font-semibold tracking-wide">{label}</label>
+      <p className="text-[9px] text-gray-400 leading-tight mb-0.5">{desc}</p>
+      <div className="flex items-center gap-1">
+        <input
+          type="number"
+          min="0"
+          step="10000"
+          value={value || ""}
+          placeholder="0"
+          onChange={e => onChange(parseFloat(e.target.value) || 0)}
+          className="border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-black w-full text-right"
+        />
+        <span className="text-[10px] text-gray-400 flex-shrink-0">₩</span>
+      </div>
+      {value > 0 && (
+        <div className="text-[9px] text-gray-400 text-right">{fKrwFull(value)}</div>
+      )}
+    </div>
+  );
 }
 
 // ────────────────────────────────────────────────────────────
@@ -596,11 +482,19 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
   const [baseMargin,   setBaseMargin]   = useState(30);
   const [status,       setStatus]       = useState<ProjectStatus>("draft");
   const [notes,        setNotes]        = useState("");
-  const [projItems, setProjItems] = useState<ProjectItem[]>([]);
-  const [itemSearch, setItemSearch] = useState("");
+  const [confirmedAt,  setConfirmedAt]  = useState<string>("");
+  const [deliveredAt,  setDeliveredAt]  = useState<string>("");
+  const [projItems,    setProjItems]    = useState<ProjectItem[]>([]);
+  const [itemSearch,   setItemSearch]   = useState("");
   const [showItemPicker, setShowItemPicker] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [saving,       setSaving]       = useState(false);
   const [creatingQuote, setCreatingQuote] = useState(false);
+
+  // 부대비용 6항목 state
+  const [costs, setCosts] = useState<ProjectCosts>({ ...DEFAULT_COSTS });
+
+  const setCostField = (field: keyof ProjectCosts, v: number) =>
+    setCosts(prev => ({ ...prev, [field]: v }));
 
   useEffect(() => {
     if (project) {
@@ -612,12 +506,25 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
       setBaseMargin(project.base_margin);
       setStatus(project.status);
       setNotes(project.notes);
+      setConfirmedAt(project.confirmed_at ?? "");
+      setDeliveredAt(project.delivered_at ?? "");
       setProjItems(project.items);
+      // 부대비용 초기화 — DB 값 있으면 사용, 없으면 기본값
+      setCosts({
+        cost_local_logistics:   project.cost_local_logistics   ?? 0,
+        cost_freight:           project.cost_freight           ?? 0,
+        cost_domestic_customs:  project.cost_domestic_customs  ?? 0,
+        cost_domestic_delivery: project.cost_domestic_delivery ?? 0,
+        cost_installation:      project.cost_installation      ?? 300000,
+        cost_other:             project.cost_other             ?? 0,
+      });
     } else {
       setTitle(""); setClient("");
       setProjectDate(new Date().toISOString().slice(0, 10));
       setExchangeRate(1700); setVatRate(10); setBaseMargin(30);
-      setStatus("draft"); setNotes(""); setProjItems([]);
+      setStatus("draft"); setNotes(""); setConfirmedAt(""); setDeliveredAt("");
+      setProjItems([]);
+      setCosts({ ...DEFAULT_COSTS });
     }
   }, [project]);
 
@@ -660,12 +567,22 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
       base_margin: baseMargin,
       status,
       notes,
+      confirmed_at:  confirmedAt  || null,
+      delivered_at:  deliveredAt  || null,
       items: projItems,
+      // 부대비용 6항목 저장
+      cost_local_logistics:   costs.cost_local_logistics,
+      cost_freight:           costs.cost_freight,
+      cost_domestic_customs:  costs.cost_domestic_customs,
+      cost_domestic_delivery: costs.cost_domestic_delivery,
+      cost_installation:      costs.cost_installation,
+      cost_other:             costs.cost_other,
     });
     setSaving(false);
   };
 
-  const summary = calcProjectSummary(projItems, exchangeRate, vatRate);
+  // 새 시그니처로 calcProjectSummary 호출
+  const summary = calcProjectSummary(projItems, exchangeRate, vatRate, costs, baseMargin);
 
   const applyBaseMarginToAll = () => {
     setProjItems(prev => prev.map(pi => ({ ...pi, sell_margin: baseMargin })));
@@ -733,7 +650,6 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
             <InlineInput label="고객명" value={client} onChange={setClient} />
             <InlineInput label="견적일" value={projectDate} onChange={setProjectDate} type="date" />
             <InlineInput label="환율 (KRW/EUR)" value={exchangeRate} onChange={v => setExchangeRate(parseFloat(v) || 1700)} type="number" suffix="₩" />
-            <InlineInput label="국내 부가세 (수입 시)" value={vatRate} onChange={v => setVatRate(parseFloat(v) || 10)} type="number" suffix="%" />
             <div className="flex flex-col gap-0.5">
               <label className="text-[10px] text-gray-400 font-medium tracking-wide uppercase">기본 마진율</label>
               <div className="flex items-center gap-1">
@@ -758,6 +674,19 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
                 <p className="text-[9px] text-orange-400">품목별 개별 설정 있음</p>
               )}
             </div>
+            {/* 계약일 / 납품일 */}
+            <InlineInput
+              label="계약일 (confirmed)"
+              value={confirmedAt}
+              onChange={setConfirmedAt}
+              type="date"
+            />
+            <InlineInput
+              label="납품완료일 (delivered)"
+              value={deliveredAt}
+              onChange={setDeliveredAt}
+              type="date"
+            />
           </div>
           <div className="mt-3">
             <label className="text-[10px] text-gray-400 font-medium tracking-wide uppercase">메모</label>
@@ -835,23 +764,21 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
 
           {projItems.length > 0 ? (
             <div className="overflow-x-auto -mx-4">
-              <table className="w-full text-xs border-collapse" style={{ minWidth: "980px" }}>
+              {/* supply_cost_rate 컬럼 제거됨 — 마진율 / 판매가 / 소비자가 / 이익 만 표시 */}
+              <table className="w-full text-xs border-collapse" style={{ minWidth: "860px" }}>
                 <thead>
                   <tr className="bg-gray-50 border-y border-gray-200">
                     <th className="text-center px-2 py-2 font-semibold text-gray-500 w-8">#</th>
                     <th className="text-left px-4 py-2 font-semibold text-gray-500 w-[300px]">품목</th>
                     <th className="text-center px-2 py-2 font-semibold text-gray-500 w-12">수량</th>
-                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-32">유럽 공급가<br/><span className="font-normal text-gray-400">VAT22% 제외 · EUR</span></th>
-                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">환산 원가<br/><span className="font-normal text-gray-400">× 환율</span></th>
-                    <th className="text-center px-2 py-2 font-semibold text-gray-500 w-16">부대비율<br/><span className="font-normal text-gray-400">%</span></th>
-                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">부대비<br/><span className="font-normal text-gray-400">KRW</span></th>
-                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">총 원가<br/><span className="font-normal text-gray-400">KRW</span></th>
+                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-32">유럽 공급가<br/><span className="font-normal text-gray-400">EUR (할인 적용)</span></th>
+                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">제품 원가<br/><span className="font-normal text-gray-400">× 환율 KRW</span></th>
                     <th className="text-center px-2 py-2 font-semibold text-gray-500 w-16">마진율<br/><span className="font-normal text-gray-400">%</span></th>
-                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">고객판매가<br/><span className="font-normal text-gray-400">합계 KRW</span></th>
+                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">참고 판매단가<br/><span className="font-normal text-gray-400">품목별 (부대비 제외)</span></th>
                     <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">국내 소비자가<br/><span className="font-normal text-gray-400">KRW 직접입력</span></th>
-                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">공식 소비자가<br/><span className="font-normal text-gray-400">EUR×1.22 → KRW</span></th>
+                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">공식 소비자가<br/><span className="font-normal text-gray-400">EUR×1.22→KRW</span></th>
                     <th className="text-center px-2 py-2 font-semibold text-gray-500 w-16">할인율<br/><span className="font-normal text-gray-400">%</span></th>
-                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">이익금액<br/><span className="font-normal text-gray-400">KRW</span></th>
+                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">이익금액<br/><span className="font-normal text-gray-400">KRW (부대비 제외)</span></th>
                     <th className="px-2 py-2 w-8"></th>
                   </tr>
                 </thead>
@@ -884,6 +811,7 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
                             </div>
                           </div>
                         </td>
+                        {/* 수량 */}
                         <td className="px-2 py-2.5 align-middle">
                           <div className="flex items-center gap-1">
                             <button type="button"
@@ -897,6 +825,7 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
                             >+</button>
                           </div>
                         </td>
+                        {/* 유럽 공급가 */}
                         <td className="px-2 py-2.5 align-top text-right">
                           <div className="text-xs font-semibold text-gray-800">€{(pi.price_eur * pi.qty).toFixed(2)}</div>
                           {pi.qty > 1 && <div className="text-[10px] text-gray-400 mt-0.5">단가 €{pi.price_eur.toFixed(2)}</div>}
@@ -907,26 +836,12 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
                             </div>
                           )}
                         </td>
+                        {/* 제품 원가 (환산) */}
                         <td className="px-2 py-2.5 align-top text-right">
                           <div className="font-medium text-gray-700">{fKrwFull(c.cost_krw_total)}</div>
                           {pi.qty > 1 && <div className="text-[10px] text-gray-400 mt-0.5">단가 {fKrwFull(c.cost_krw)}</div>}
                         </td>
-                        <td className="px-2 py-2.5 align-top text-center">
-                          <input
-                            type="number" min="0" max="100" step="0.5"
-                            value={pi.supply_cost_rate}
-                            onChange={e => updateItem(pi.itemId, "supply_cost_rate", e.target.value)}
-                            className="w-14 text-center border border-gray-200 rounded px-1 py-0.5 text-xs focus:outline-none focus:border-black"
-                          />
-                        </td>
-                        <td className="px-2 py-2.5 align-top text-right">
-                          <div className="text-gray-700">{fKrwFull(c.supply_cost_total)}</div>
-                          {pi.qty > 1 && <div className="text-[10px] text-gray-400 mt-0.5">단가 {fKrwFull(c.supply_cost)}</div>}
-                        </td>
-                        <td className="px-2 py-2.5 align-top text-right">
-                          <div className="font-semibold text-gray-800">{fKrwFull(c.total_cost_total)}</div>
-                          {pi.qty > 1 && <div className="text-[10px] text-gray-400 mt-0.5">단가 {fKrwFull(c.total_cost)}</div>}
-                        </td>
+                        {/* 마진율 */}
                         <td className="px-2 py-2.5 align-top text-center">
                           <input
                             type="number" min="0" max="99" step="0.5"
@@ -935,10 +850,13 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
                             className="w-14 text-center border border-gray-200 rounded px-1 py-0.5 text-xs focus:outline-none focus:border-black"
                           />
                         </td>
+                        {/* 참고 판매단가 (품목별, 부대비 미포함) */}
                         <td className="px-2 py-2.5 align-top text-right">
                           <div className="font-bold text-black">{fKrwFull(c.sell_price_total)}</div>
                           {pi.qty > 1 && <div className="text-[10px] text-gray-400 mt-0.5">단가 {fKrwFull(c.sell_price)}</div>}
+                          <div className="text-[9px] text-orange-400 mt-0.5">부대비 미포함</div>
                         </td>
+                        {/* 국내 소비자가 */}
                         <td className="px-2 py-2.5 align-top text-right">
                           <div className="flex items-center justify-end gap-1">
                             <input
@@ -954,11 +872,13 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
                             <div className="text-[10px] text-gray-400 mt-0.5 text-right">{fKrwFull(pi.domestic_retail)}</div>
                           )}
                         </td>
+                        {/* 공식 소비자가 */}
                         <td className="px-2 py-2.5 align-top text-right">
                           <div className="text-gray-700 font-medium">{fKrwFull(c.retail_krw_total)}</div>
                           {pi.qty > 1 && <div className="text-[10px] text-gray-400 mt-0.5">단가 {fKrwFull(c.retail_krw)}</div>}
                           <div className="text-[10px] text-gray-400 mt-0.5">€{Math.round(pi.snap.price_eur).toLocaleString()} × 1.22</div>
                         </td>
+                        {/* 할인율 */}
                         <td className="px-2 py-2.5 align-top text-center">
                           {pi.domestic_retail > 0 ? (
                             <span className={`font-semibold ${c.discount_rate >= 0 ? "text-blue-600" : "text-red-500"}`}>
@@ -968,6 +888,7 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
                             <span className="text-gray-300">—</span>
                           )}
                         </td>
+                        {/* 이익금액 (품목별, 부대비 미포함) */}
                         <td className="px-2 py-2.5 align-top text-right">
                           <div className={`font-semibold ${c.profit_total >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                             {fKrwFull(c.profit_total)}
@@ -978,6 +899,7 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
                             </div>
                           )}
                         </td>
+                        {/* 삭제 */}
                         <td className="px-2 py-2.5 align-top">
                           <button
                             onClick={() => removeItem(pi.itemId)}
@@ -1001,45 +923,151 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
           )}
         </section>
 
-        {/* ━━━━ 구역 3: 비용 요약 ━━━━ */}
+        {/* ━━━━ 구역 3: 부대비용 입력 ━━━━ */}
+        <section className="px-4 py-4 border-b border-gray-100">
+          <h3 className="text-[11px] font-extrabold text-gray-400 tracking-widest uppercase mb-1">
+            03 · 부대비용
+          </h3>
+          <p className="text-[10px] text-gray-400 mb-4">
+            수입 관련 실제 발생 비용을 항목별로 입력하세요. 판매가 = (제품원가 + 부대비 합계) ÷ (1 − 마진율%)
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <CostInput
+              label="① 이태리 현지 물류비"
+              desc="PICK UP / B/L / STUFFING 등"
+              value={costs.cost_local_logistics}
+              onChange={v => setCostField("cost_local_logistics", v)}
+            />
+            <CostInput
+              label="② 해상운임 / 항공운임"
+              desc="OCEAN TICKET 등"
+              value={costs.cost_freight}
+              onChange={v => setCostField("cost_freight", v)}
+            />
+            <CostInput
+              label="③ 국내 부대비용"
+              desc="THC / DOC / 관세 / 수입부가세 등"
+              value={costs.cost_domestic_customs}
+              onChange={v => setCostField("cost_domestic_customs", v)}
+            />
+            <CostInput
+              label="④ 국내 물류비용"
+              desc="TRUCKING CHARGE 등"
+              value={costs.cost_domestic_delivery}
+              onChange={v => setCostField("cost_domestic_delivery", v)}
+            />
+            <CostInput
+              label="⑤ 시공비"
+              desc="기본값 ₩300,000"
+              value={costs.cost_installation}
+              onChange={v => setCostField("cost_installation", v)}
+            />
+            <CostInput
+              label="⑥ 기타 / 보험료"
+              desc="보험료 및 기타 비용"
+              value={costs.cost_other}
+              onChange={v => setCostField("cost_other", v)}
+            />
+          </div>
+
+          {/* 부대비 소계 */}
+          <div className="mt-4 pt-3 border-t border-gray-100">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-500 font-medium">부대비용 합계</span>
+              <span className="font-bold text-gray-800">{fKrwFull(summary.total_additional_costs)}</span>
+            </div>
+          </div>
+        </section>
+
+        {/* ━━━━ 구역 4: 비용 요약 ━━━━ */}
         {projItems.length > 0 && (
           <section className="px-4 py-4 border-b border-gray-100">
             <h3 className="text-[11px] font-extrabold text-gray-400 tracking-widest uppercase mb-3">
-              03 · 비용 요약
+              04 · 비용 요약
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <SummaryCard label="유럽 총액" value={fEur(summary.total_eur)} sub="EUR 기준" />
-              <SummaryCard label="총 원가" value={fKrwFull(summary.total_cost_krw)} sub={`부대비 ${fKrwFull(summary.total_supply)} 포함`} />
-              <SummaryCard label="총 고객 판매가" value={fKrwFull(summary.total_sell)} highlight />
-              <SummaryCard label="총 공식 소비자가" value={summary.total_retail > 0 ? fKrwFull(summary.total_retail) : "—"} sub="입력된 항목 기준" />
-              <SummaryCard label="총 이익금액" value={fKrwFull(summary.total_profit)} accent={summary.total_profit >= 0 ? "green" : "red"} />
-              <SummaryCard label="평균 마진율" value={fPct(summary.avg_margin)} sub="판매가 기준" accent={summary.avg_margin >= 20 ? "green" : "red"} />
-              <SummaryCard label="총 부대비" value={fKrwFull(summary.total_supply)} sub="수입 부대비용" />
-              <SummaryCard label="총 품목 수" value={`${summary.item_count}개`} sub={`${projItems.length}종`} />
+
+            {/* 2단 레이아웃: 원가 구조 | 수익 요약 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+              {/* 왼쪽: 원가 구조 */}
+              <div className="rounded-lg border border-gray-200 overflow-hidden">
+                <div className="bg-gray-50 px-3 py-2 border-b border-gray-200">
+                  <span className="text-[10px] font-bold text-gray-500 tracking-widest uppercase">원가 구조</span>
+                </div>
+                <div className="px-3 py-2 space-y-2">
+                  <CostRow label="유럽 총액 (EUR)" value={`€ ${summary.total_eur.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2})}`} />
+                  <CostRow label="제품 원가 (× 환율)" value={fKrwFull(summary.total_product_krw)} />
+                  <CostRow label="부대비용 합계" value={fKrwFull(summary.total_additional_costs)} indent />
+                  {summary.cost_local_logistics   > 0 && <CostRow label="  ① 이태리 현지 물류비" value={fKrwFull(summary.cost_local_logistics)}   indent2 />}
+                  {summary.cost_freight           > 0 && <CostRow label="  ② 해상/항공운임"     value={fKrwFull(summary.cost_freight)}           indent2 />}
+                  {summary.cost_domestic_customs  > 0 && <CostRow label="  ③ 국내 부대비용"     value={fKrwFull(summary.cost_domestic_customs)}  indent2 />}
+                  {summary.cost_domestic_delivery > 0 && <CostRow label="  ④ 국내 물류비용"     value={fKrwFull(summary.cost_domestic_delivery)} indent2 />}
+                  {summary.cost_installation      > 0 && <CostRow label="  ⑤ 시공비"           value={fKrwFull(summary.cost_installation)}      indent2 />}
+                  {summary.cost_other             > 0 && <CostRow label="  ⑥ 기타/보험료"       value={fKrwFull(summary.cost_other)}             indent2 />}
+                  <div className="pt-1 border-t border-gray-200">
+                    <CostRow label="실제 총원가" value={fKrwFull(summary.total_cost_krw)} bold />
+                  </div>
+                </div>
+              </div>
+
+              {/* 오른쪽: 수익 요약 */}
+              <div className="space-y-3">
+                <SummaryCard
+                  label="총 고객 판매가"
+                  value={fKrwFull(summary.total_sell)}
+                  sub={`= 총원가 ÷ (1 − ${baseMargin}%)`}
+                  highlight
+                />
+                <div className="grid grid-cols-2 gap-3">
+                  <SummaryCard
+                    label="총 이익금액"
+                    value={fKrwFull(summary.total_profit)}
+                    sub="판매가 − 총원가"
+                    accent={summary.total_profit >= 0 ? "green" : "red"}
+                  />
+                  <SummaryCard
+                    label="실현 마진율"
+                    value={fPct(summary.avg_margin)}
+                    sub="판매가 기준"
+                    accent={summary.avg_margin >= 20 ? "green" : "red"}
+                  />
+                  <SummaryCard
+                    label="총 품목 수"
+                    value={`${summary.item_count}개`}
+                    sub={`${projItems.length}종`}
+                  />
+                  <SummaryCard
+                    label="공식 소비자가"
+                    value={summary.total_retail > 0 ? fKrwFull(summary.total_retail) : "—"}
+                    sub="EUR × 1.22 → KRW"
+                  />
+                </div>
+              </div>
             </div>
           </section>
         )}
 
-        {/* ━━━━ 구역 4: 고객 견적 전환 ━━━━ */}
+        {/* ━━━━ 구역 5: 고객 견적 전환 ━━━━ */}
         <section className="px-4 py-4">
           <h3 className="text-[11px] font-extrabold text-gray-400 tracking-widest uppercase mb-3">
-            04 · 고객 견적 전환
+            05 · 고객 견적 전환
           </h3>
           <div className="flex flex-wrap gap-3">
-            {/* 고객 견적서 생성 — Supabase 저장 후 견적서 탭 이동 */}
+            {/* 고객 견적서 생성 */}
             <button
               onClick={async () => {
-                if (projItems.length === 0) {
-                  alert("품목을 먼저 추가하세요");
-                  return;
-                }
+                if (projItems.length === 0) { alert("품목을 먼저 추가하세요"); return; }
                 if (!onCreateQuote) return;
                 setCreatingQuote(true);
                 try {
-                  // ProjectItem[] → QuoteItem[] 변환 (KRW 판매가 기반)
                   const quoteItems: QuoteItem[] = projItems.map(pi => {
                     const c = calcProjectItem(pi, exchangeRate, vatRate);
-                    const sellPriceEurEquiv = c.sell_price / exchangeRate;
+                    // 프로젝트 레벨 판매가를 품목별로 안분 (제품원가 비율로 배분)
+                    const itemCostRatio = summary.total_product_krw > 0
+                      ? (c.cost_krw_total / summary.total_product_krw)
+                      : (1 / projItems.length);
+                    const allocatedSell = summary.total_sell * itemCostRatio / pi.qty;
+                    const sellPriceEurEquiv = allocatedSell / exchangeRate;
                     return {
                       itemId: pi.itemId,
                       qty: pi.qty,
@@ -1070,11 +1098,12 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
               </svg>
               {creatingQuote ? "생성 중..." : "고객 견적서 생성"}
             </button>
-            {/* 내부 원가표 출력 — 실제 팝업 */}
+
+            {/* 내부 원가표 출력 */}
             <button
               onClick={() => {
                 if (projItems.length === 0) { alert("품목을 먼저 추가하세요"); return; }
-                openCostSheetWindow(title, client, projectDate, projItems, exchangeRate, vatRate);
+                openCostSheetWindow(title, client, projectDate, projItems, exchangeRate, vatRate, costs, baseMargin);
               }}
               className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-50 transition-colors"
             >
@@ -1085,6 +1114,21 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
               </svg>
               내부 원가표 출력
             </button>
+
+            {/* 고객 견적서 인쇄 미리보기 */}
+            <button
+              onClick={() => {
+                if (projItems.length === 0) { alert("품목을 먼저 추가하세요"); return; }
+                openProjectQuotePrintWindow(title, client, projectDate, projItems, exchangeRate, vatRate);
+              }}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-500 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              고객견적서 미리보기
+            </button>
           </div>
           {projItems.length === 0 && (
             <p className="mt-2 text-[10px] text-gray-300">품목을 추가하면 고객 견적서 생성이 가능합니다</p>
@@ -1092,6 +1136,27 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
         </section>
 
       </div>
+    </div>
+  );
+}
+
+// ── 비용 행 컴포넌트 ──────────────────────────────────────
+function CostRow({
+  label, value, bold, indent, indent2
+}: {
+  label: string; value: string;
+  bold?: boolean; indent?: boolean; indent2?: boolean;
+}) {
+  return (
+    <div className={`flex items-center justify-between gap-2 text-xs ${
+      indent2 ? "pl-4" : indent ? "pl-2" : ""
+    }`}>
+      <span className={`${bold ? "font-bold text-gray-800" : indent2 ? "text-gray-400" : "text-gray-600"}`}>
+        {label}
+      </span>
+      <span className={`${bold ? "font-bold text-gray-900" : "text-gray-700"} tabular-nums`}>
+        {value}
+      </span>
     </div>
   );
 }
@@ -1124,4 +1189,3 @@ function SummaryCard({
     </div>
   );
 }
-
