@@ -1,6 +1,6 @@
 "use client";
 
-type Tab = "catalog" | "projects" | "customer_quotes" | "orders";
+type Tab = "catalog" | "projects" | "customer_quotes" | "orders" | "accounting";
 
 interface HeaderProps {
   syncStatus: "online" | "offline" | "syncing";
@@ -54,6 +54,7 @@ export function SubHeader({
     { key: "projects",        label: "프로젝트" },
     { key: "customer_quotes", label: "고객견적서" },
     { key: "orders",          label: "발주서" },
+    { key: "accounting",      label: "회계" },
   ];
 
   return (

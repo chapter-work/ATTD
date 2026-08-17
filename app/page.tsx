@@ -9,8 +9,9 @@ import QuoteBuilder from "@/app/components/QuoteBuilder";
 import SavedQuotes from "@/app/components/SavedQuotes";
 import ProjectList from "@/app/components/ProjectList";
 import ProjectDetail from "@/app/components/ProjectDetail";
+import Accounting from "@/app/components/Accounting";
 
-type Tab = "catalog" | "projects" | "customer_quotes" | "orders";
+type Tab = "catalog" | "projects" | "customer_quotes" | "orders" | "accounting";
 type SyncStatus = "online" | "offline" | "syncing";
 
 export default function Home() {
@@ -401,6 +402,11 @@ export default function Home() {
             onLoadQuote={setEditingOrder}
             onDeleteQuote={handleDeleteOrder}
           />
+        </div>
+
+        {/* ── 회계 탭 ── */}
+        <div className={`h-full overflow-hidden ${tab === "accounting" ? "" : "hidden"}`}>
+          <Accounting projects={projects} />
         </div>
 
       </main>
