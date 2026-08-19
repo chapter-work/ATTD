@@ -177,7 +177,8 @@ export default function Home() {
   };
 
   // ── 프로젝트 CRUD ─────────────────────────────────────
-  const handleSaveProject = async (projectData: Partial<Project>) => {
+  // silent=true 이면 alert 생략 (견적서 생성 시 내부 자동저장용)
+  const handleSaveProject = async (projectData: Partial<Project>, silent = false) => {
     // snap.img 항상 최신 items에서 보완하여 저장
     const imgMap = new Map<string, string | null>(items.map(it => [it.id, it.img]));
     const patchedItems = (projectData.items || []).map(pi => ({
@@ -194,7 +195,7 @@ export default function Home() {
       if (data) setSelectedProject(data as Project);
     }
     await loadProjects();
-    alert("프로젝트가 저장되었습니다");
+    if (!silent) alert("프로젝트가 저장되었습니다");
   };
 
   const handleDeleteProject = async (id: string) => {
@@ -316,13 +317,14 @@ export default function Home() {
               <ProjectDetail
                 project={selectedProject}
                 items={items}
-                onSave={handleSaveProject}
+                onSave={(data) => handleSaveProject(data, false)}
+                onSaveSilent={(data) => handleSaveProject(data, true)}
                 onClose={() => {
                   setShowProjectDetail(false);
                   setSelectedProject(null);
                 }}
                 onCreateQuote={async (quoteData) => {
-                  // snap.img 보완 후 저장
+                  // snap.img 보완 후 견적서 저장
                   const imgMap = new Map<string, string | null>(items.map(it => [it.id, it.img]));
                   const patchedItems = (quoteData.items || []).map(qi => ({
                     ...qi,
@@ -332,9 +334,8 @@ export default function Home() {
                   const { error } = await supabase.from("quotes").insert([payload]);
                   if (error) { alert("고객견적서 저장 오류: " + error.message); return; }
                   await loadQuotes();
-                  setTab("customer_quotes");
-                  setShowProjectDetail(false);
-                  alert("고객견적서가 생성되었습니다. 고객견적서 탭에서 확인하세요.");
+                  // ✅ 프로젝트 화면은 그대로 유지 — 탭만 잠시 알림
+                  alert("고객견적서가 생성되었습니다.\n프로젝트는 계속 편집할 수 있습니다.\n(고객견적서 탭에서 확인 가능)");
                 }}
               />
             </div>

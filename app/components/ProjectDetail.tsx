@@ -416,6 +416,7 @@ interface ProjectDetailProps {
   project: Project | null;
   items: Item[];
   onSave: (p: Partial<Project>) => Promise<void>;
+  onSaveSilent?: (p: Partial<Project>) => Promise<void>; // alert 없이 저장 (견적서 생성 시 내부용)
   onClose: () => void;
   onCreateQuote?: (quote: Partial<Quote>) => Promise<void>;
 }
@@ -473,7 +474,7 @@ function CostInput({
 }
 
 // ────────────────────────────────────────────────────────────
-export default function ProjectDetail({ project, items, onSave, onClose, onCreateQuote }: ProjectDetailProps) {
+export default function ProjectDetail({ project, items, onSave, onSaveSilent, onClose, onCreateQuote }: ProjectDetailProps) {
   const [title,        setTitle]        = useState("");
   const [client,       setClient]       = useState("");
   const [projectDate,  setProjectDate]  = useState(new Date().toISOString().slice(0, 10));
@@ -554,30 +555,32 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
     ));
   }, []);
 
+  // 현재 폼 상태를 payload 객체로 변환
+  const buildPayload = () => ({
+    ...(project?.id ? { id: project.id } : {}),
+    title: title.trim(),
+    client: client.trim(),
+    project_date: projectDate,
+    exchange_rate: exchangeRate,
+    vat_rate: vatRate,
+    base_margin: baseMargin,
+    status,
+    notes,
+    confirmed_at:  confirmedAt  || null,
+    delivered_at:  deliveredAt  || null,
+    items: projItems,
+    cost_local_logistics:   costs.cost_local_logistics,
+    cost_freight:           costs.cost_freight,
+    cost_domestic_customs:  costs.cost_domestic_customs,
+    cost_domestic_delivery: costs.cost_domestic_delivery,
+    cost_installation:      costs.cost_installation,
+    cost_other:             costs.cost_other,
+  });
+
   const handleSave = async () => {
     if (!title.trim()) { alert("프로젝트명을 입력하세요"); return; }
     setSaving(true);
-    await onSave({
-      ...(project?.id ? { id: project.id } : {}),
-      title: title.trim(),
-      client: client.trim(),
-      project_date: projectDate,
-      exchange_rate: exchangeRate,
-      vat_rate: vatRate,
-      base_margin: baseMargin,
-      status,
-      notes,
-      confirmed_at:  confirmedAt  || null,
-      delivered_at:  deliveredAt  || null,
-      items: projItems,
-      // 부대비용 6항목 저장
-      cost_local_logistics:   costs.cost_local_logistics,
-      cost_freight:           costs.cost_freight,
-      cost_domestic_customs:  costs.cost_domestic_customs,
-      cost_domestic_delivery: costs.cost_domestic_delivery,
-      cost_installation:      costs.cost_installation,
-      cost_other:             costs.cost_other,
-    });
+    await onSave(buildPayload());
     setSaving(false);
   };
 
@@ -1053,16 +1056,20 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
             05 · 고객 견적 전환
           </h3>
           <div className="flex flex-wrap gap-3">
-            {/* 고객 견적서 생성 */}
+            {/* 고객 견적서 생성 — 프로젝트 자동 저장 후 견적서 생성 */}
             <button
               onClick={async () => {
                 if (projItems.length === 0) { alert("품목을 먼저 추가하세요"); return; }
+                if (!title.trim()) { alert("프로젝트명을 먼저 입력하세요"); return; }
                 if (!onCreateQuote) return;
                 setCreatingQuote(true);
                 try {
+                  // ① 프로젝트 먼저 자동 저장 (화면 닫지 않음, alert 없이)
+                  await (onSaveSilent ?? onSave)(buildPayload());
+
+                  // ② 견적서 생성
                   const quoteItems: QuoteItem[] = projItems.map(pi => {
                     const c = calcProjectItem(pi, exchangeRate, vatRate);
-                    // 프로젝트 레벨 판매가를 품목별로 안분 (제품원가 비율로 배분)
                     const itemCostRatio = summary.total_product_krw > 0
                       ? (c.cost_krw_total / summary.total_product_krw)
                       : (1 / projItems.length);
@@ -1087,7 +1094,7 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
                   setCreatingQuote(false);
                 }
               }}
-              disabled={creatingQuote}
+              disabled={creatingQuote || saving}
               className="flex items-center gap-2 px-4 py-2.5 bg-black text-white text-xs font-semibold rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1096,7 +1103,7 @@ export default function ProjectDetail({ project, items, onSave, onClose, onCreat
                 <line x1="12" y1="11" x2="12" y2="17"/>
                 <line x1="9" y1="14" x2="15" y2="14"/>
               </svg>
-              {creatingQuote ? "생성 중..." : "고객 견적서 생성"}
+              {creatingQuote ? "저장 후 생성 중..." : "고객 견적서 생성"}
             </button>
 
             {/* 내부 원가표 출력 */}
