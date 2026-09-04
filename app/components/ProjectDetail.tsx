@@ -899,11 +899,9 @@ export default function ProjectDetail({ project, items, onSave, onSaveSilent, on
                     const allocatedCost = Math.round(summary.total_additional_costs * allocRatio);
                     const allocatedCostPerUnit = pi.qty > 0 ? Math.round(allocatedCost / pi.qty) : 0;
 
-                    // 참고 판매단가 = (제품원가 + 배분 부대비) ÷ (1 - 마진%)
+                    // 참고 판매단가 = (제품원가 + 배분 부대비) × (1 + 마진율%)  ← 원가 기준 마진
                     const totalCostWithAlloc = c.cost_krw_total + allocatedCost;
-                    const sellPriceWithAlloc = pi.sell_margin < 100
-                      ? Math.round(totalCostWithAlloc / (1 - pi.sell_margin / 100))
-                      : 0;
+                    const sellPriceWithAlloc = Math.round(totalCostWithAlloc * (1 + pi.sell_margin / 100));
                     const sellPricePerUnit = pi.qty > 0 ? Math.round(sellPriceWithAlloc / pi.qty) : 0;
                     // 이익 = 판매가 - (제품원가 + 부대비 배분)
                     const profitWithAlloc = sellPriceWithAlloc - totalCostWithAlloc;
