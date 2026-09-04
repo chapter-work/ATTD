@@ -553,7 +553,7 @@ export default function ProjectDetail({ project, items, onSave, onSaveSilent, on
   // 항목별 추정 여부 (true = 일괄추정, false = 직접입력 확정)
   const [costEstimated, setCostEstimated] = useState<CostEstimated>({ ...DEFAULT_ESTIMATED });
   // 일괄 추정 비율 (헤더 % 입력)
-  const [bulkRate, setBulkRate] = useState<number>(30);
+  const [bulkRate, setBulkRate] = useState<number>(20);
 
   const setCostField = (field: keyof ProjectCosts, v: number) => {
     setCosts(prev => ({ ...prev, [field]: v }));
@@ -601,7 +601,7 @@ export default function ProjectDetail({ project, items, onSave, onSaveSilent, on
       setProjItems([]);
       setCosts({ ...DEFAULT_COSTS });
       setCostEstimated({ ...DEFAULT_ESTIMATED });
-      setBulkRate(30);
+      setBulkRate(20);
     }
   }, [project]);
 
