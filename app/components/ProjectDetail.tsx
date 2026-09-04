@@ -444,138 +444,86 @@ const DEFAULT_COSTS: ProjectCosts = {
   cost_other:             0,
 };
 
-// 항목별 비율 입력 모드 상태 타입
-type CostRates = {
-  cost_local_logistics:   number;  // %
-  cost_freight:           number;  // %
-  cost_domestic_customs:  number;
-  cost_domestic_delivery: number;
-  cost_installation:      number;
-  cost_other:             number;
+// 항목별 "추정값 여부" 타입 (true = 일괄추정으로 채워진 값, false = 직접 입력 확정값)
+type CostEstimated = { [K in keyof ProjectCosts]: boolean };
+
+const DEFAULT_ESTIMATED: CostEstimated = {
+  cost_local_logistics:   false,
+  cost_freight:           false,
+  cost_domestic_customs:  false,
+  cost_domestic_delivery: false,
+  cost_installation:      false,
+  cost_other:             false,
 };
 
-// 비율 모드 on/off
-type CostModes = {
-  [K in keyof CostRates]: "rate" | "amount";  // rate = % 비율, amount = KRW 직접 입력
+// 일괄 추정 시 항목별 배분 비율 (합계 = 100%)
+const BULK_ALLOC: { [K in keyof ProjectCosts]: number } = {
+  cost_local_logistics:   20,   // 이태리 현지 물류
+  cost_freight:           45,   // 해상/항공운임 (가장 큰 비중)
+  cost_domestic_customs:  20,   // 국내 부대비용
+  cost_domestic_delivery: 10,   // 국내 물류
+  cost_installation:       5,   // 시공비
+  cost_other:              0,   // 기타 (기본 0)
 };
 
-const DEFAULT_RATES: CostRates = {
-  cost_local_logistics:   0,
-  cost_freight:           20,   // 기본 20% (해상운임 예상)
-  cost_domestic_customs:  0,
-  cost_domestic_delivery: 0,
-  cost_installation:      0,
-  cost_other:             0,
-};
-
-const DEFAULT_MODES: CostModes = {
-  cost_local_logistics:   "amount",
-  cost_freight:           "rate",   // 기본 비율 모드
-  cost_domestic_customs:  "amount",
-  cost_domestic_delivery: "amount",
-  cost_installation:      "amount",
-  cost_other:             "amount",
-};
-
-// ── 부대비용 항목 인풋 (비율 / KRW 전환) ─────────────────────
+// ── 부대비용 항목 인풋 (단순 ₩ 직접 입력 + 추정/확정 표시) ──
 function CostInput({
-  label, desc, value, onChange,
-  mode, onModeChange,
-  rate, onRateChange,
-  baseAmount,   // 비율 기준이 되는 금액 (제품원가 합계)
+  label, desc, value, onChange, isEstimated,
 }: {
   label: string;
   desc: string;
-  value: number;           // KRW 직접 입력값
+  value: number;
   onChange: (v: number) => void;
-  mode: "rate" | "amount";
-  onModeChange: (m: "rate" | "amount") => void;
-  rate: number;            // % 비율
-  onRateChange: (r: number) => void;
-  baseAmount: number;      // 제품원가 합계
+  isEstimated: boolean;   // true = 추정값(연한 색), false = 확정값(진한 색)
 }) {
-  // 비율 모드일 때 계산된 KRW 예상액
-  const estimatedKrw = mode === "rate" ? Math.round(baseAmount * rate / 100) : value;
-
   return (
-    <div className="flex flex-col gap-1 bg-white border border-gray-200 rounded-lg p-3">
-      {/* 레이블 + 모드 전환 토글 */}
+    <div className={`flex flex-col gap-1.5 rounded-lg p-3 border transition-colors ${
+      isEstimated
+        ? "bg-blue-50/60 border-blue-100"
+        : value > 0
+          ? "bg-white border-gray-300"
+          : "bg-white border-gray-200"
+    }`}>
+      {/* 레이블 + 상태 배지 */}
       <div className="flex items-start justify-between gap-1">
         <div>
           <div className="text-[10px] text-gray-600 font-bold leading-tight">{label}</div>
           <div className="text-[9px] text-gray-400 mt-0.5 leading-tight">{desc}</div>
         </div>
-        {/* 비율 / 금액 토글 */}
-        <div className="flex flex-shrink-0 items-center border border-gray-200 rounded overflow-hidden text-[9px] font-bold">
-          <button
-            type="button"
-            onClick={() => onModeChange("rate")}
-            className={`px-1.5 py-0.5 transition-colors ${
-              mode === "rate"
-                ? "bg-blue-500 text-white"
-                : "bg-white text-gray-400 hover:bg-gray-100"
-            }`}
-          >
-            %
-          </button>
-          <button
-            type="button"
-            onClick={() => onModeChange("amount")}
-            className={`px-1.5 py-0.5 transition-colors ${
-              mode === "amount"
-                ? "bg-gray-700 text-white"
-                : "bg-white text-gray-400 hover:bg-gray-100"
-            }`}
-          >
-            ₩
-          </button>
-        </div>
+        {isEstimated && value > 0 && (
+          <span className="flex-shrink-0 text-[8px] font-bold text-blue-400 bg-blue-100 px-1.5 py-0.5 rounded">
+            추정
+          </span>
+        )}
+        {!isEstimated && value > 0 && (
+          <span className="flex-shrink-0 text-[8px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+            확정
+          </span>
+        )}
       </div>
 
-      {/* 비율 모드 */}
-      {mode === "rate" && (
-        <div className="space-y-1">
-          <div className="flex items-center gap-1">
-            <input
-              type="number" min="0" max="100" step="0.5"
-              value={rate || ""}
-              placeholder="0"
-              onChange={e => onRateChange(parseFloat(e.target.value) || 0)}
-              className="border border-blue-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-400 w-full text-right bg-blue-50"
-            />
-            <span className="text-[10px] text-blue-500 font-bold flex-shrink-0">%</span>
-          </div>
-          {/* 예상 금액 표시 */}
-          <div className="flex items-center justify-between">
-            <span className="text-[9px] text-gray-400">
-              제품원가 × {rate}%
-            </span>
-            <span className={`text-[10px] font-semibold ${estimatedKrw > 0 ? "text-blue-600" : "text-gray-300"}`}>
-              {estimatedKrw > 0 ? fKrwFull(estimatedKrw) : "—"}
-            </span>
-          </div>
-          <div className="text-[8px] text-blue-400 leading-tight">
-            ※ 예상 금액 — 실제 확정 후 ₩ 탭에서 직접 입력하세요
-          </div>
-        </div>
-      )}
+      {/* 금액 입력 */}
+      <div className="flex items-center gap-1">
+        <input
+          type="number" min="0" step="10000"
+          value={value || ""}
+          placeholder="0"
+          onChange={e => onChange(parseFloat(e.target.value) || 0)}
+          className={`rounded px-2 py-1.5 text-xs focus:outline-none w-full text-right transition-colors ${
+            isEstimated
+              ? "border border-blue-200 bg-blue-50 text-blue-700 focus:border-blue-400"
+              : "border border-gray-200 bg-white focus:border-black"
+          }`}
+        />
+        <span className="text-[10px] text-gray-400 flex-shrink-0">₩</span>
+      </div>
 
-      {/* 직접 입력 모드 */}
-      {mode === "amount" && (
-        <div className="space-y-1">
-          <div className="flex items-center gap-1">
-            <input
-              type="number" min="0" step="10000"
-              value={value || ""}
-              placeholder="0"
-              onChange={e => onChange(parseFloat(e.target.value) || 0)}
-              className="border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-black w-full text-right"
-            />
-            <span className="text-[10px] text-gray-400 flex-shrink-0">₩</span>
-          </div>
-          {value > 0 && (
-            <div className="text-[9px] text-gray-500 text-right font-medium">{fKrwFull(value)}</div>
-          )}
+      {/* 금액 한글 표시 */}
+      {value > 0 && (
+        <div className={`text-[9px] text-right font-medium ${
+          isEstimated ? "text-blue-500" : "text-gray-500"
+        }`}>
+          {fKrwFull(value)}
         </div>
       )}
     </div>
@@ -602,17 +550,16 @@ export default function ProjectDetail({ project, items, onSave, onSaveSilent, on
 
   // 부대비용 6항목 state (KRW 직접입력값)
   const [costs, setCosts] = useState<ProjectCosts>({ ...DEFAULT_COSTS });
-  // 비율 state (% 입력값)
-  const [costRates, setCostRates] = useState<CostRates>({ ...DEFAULT_RATES });
-  // 모드 state (rate / amount)
-  const [costModes, setCostModes] = useState<CostModes>({ ...DEFAULT_MODES });
+  // 항목별 추정 여부 (true = 일괄추정, false = 직접입력 확정)
+  const [costEstimated, setCostEstimated] = useState<CostEstimated>({ ...DEFAULT_ESTIMATED });
+  // 일괄 추정 비율 (헤더 % 입력)
+  const [bulkRate, setBulkRate] = useState<number>(30);
 
-  const setCostField = (field: keyof ProjectCosts, v: number) =>
+  const setCostField = (field: keyof ProjectCosts, v: number) => {
     setCosts(prev => ({ ...prev, [field]: v }));
-  const setCostRate = (field: keyof CostRates, v: number) =>
-    setCostRates(prev => ({ ...prev, [field]: v }));
-  const setCostMode = (field: keyof CostModes, m: "rate" | "amount") =>
-    setCostModes(prev => ({ ...prev, [field]: m }));
+    // 직접 수정 → 확정 상태로 전환
+    setCostEstimated(prev => ({ ...prev, [field]: false }));
+  };
 
   useEffect(() => {
     if (project) {
@@ -637,16 +584,15 @@ export default function ProjectDetail({ project, items, onSave, onSaveSilent, on
         cost_other:             project.cost_other             ?? 0,
       };
       setCosts(loadedCosts);
-      // 저장된 KRW 값이 있는 항목 → amount 모드, 없는 항목 → 기본 모드 유지
-      setCostModes({
-        cost_local_logistics:   loadedCosts.cost_local_logistics   > 0 ? "amount" : "amount",
-        cost_freight:           loadedCosts.cost_freight           > 0 ? "amount" : "rate",
-        cost_domestic_customs:  loadedCosts.cost_domestic_customs  > 0 ? "amount" : "amount",
-        cost_domestic_delivery: loadedCosts.cost_domestic_delivery > 0 ? "amount" : "amount",
-        cost_installation:      "amount",
-        cost_other:             loadedCosts.cost_other             > 0 ? "amount" : "amount",
+      // 저장된 KRW > 0 인 항목은 확정값으로 간주
+      setCostEstimated({
+        cost_local_logistics:   false,
+        cost_freight:           false,
+        cost_domestic_customs:  false,
+        cost_domestic_delivery: false,
+        cost_installation:      false,
+        cost_other:             false,
       });
-      setCostRates({ ...DEFAULT_RATES });
     } else {
       setTitle(""); setClient("");
       setProjectDate(new Date().toISOString().slice(0, 10));
@@ -654,8 +600,8 @@ export default function ProjectDetail({ project, items, onSave, onSaveSilent, on
       setStatus("draft"); setNotes(""); setConfirmedAt(""); setDeliveredAt("");
       setProjItems([]);
       setCosts({ ...DEFAULT_COSTS });
-      setCostRates({ ...DEFAULT_RATES });
-      setCostModes({ ...DEFAULT_MODES });
+      setCostEstimated({ ...DEFAULT_ESTIMATED });
+      setBulkRate(30);
     }
   }, [project]);
 
@@ -685,47 +631,37 @@ export default function ProjectDetail({ project, items, onSave, onSaveSilent, on
     ));
   }, []);
 
-  // 현재 폼 상태를 payload 객체로 변환 (rate 모드 항목은 effectiveCosts의 KRW로 저장)
-  // ※ buildPayload 는 effectiveCosts / summary 계산 이후에 정의됨 (아래 참조)
+  // summary 계산 (costs를 직접 사용 — effectiveCosts 분리 불필요)
+  const summary = calcProjectSummary(projItems, exchangeRate, vatRate, costs, baseMargin);
+  const baseCostKrw = summary.total_product_krw;
 
-  // rate 모드 항목은 제품원가 × rate% 로 환산, amount 모드는 직접 입력값 사용
-  // summary 계산 전에 먼저 기본 원가 합계가 필요하므로 두 단계로 계산
-  const rawSummary = calcProjectSummary(projItems, exchangeRate, vatRate, {
-    cost_local_logistics:   0,
-    cost_freight:           0,
-    cost_domestic_customs:  0,
-    cost_domestic_delivery: 0,
-    cost_installation:      0,
-    cost_other:             0,
-  }, baseMargin);
-  const baseCostKrw = rawSummary.total_product_krw;
+  // 일괄 추정 총액 (헤더 표시용)
+  const bulkEstimatedTotal = Math.round(baseCostKrw * bulkRate / 100);
 
-  // 각 항목의 실효 KRW 값 계산 (effectiveCosts)
-  const effectiveCosts: ProjectCosts = {
-    cost_local_logistics:   costModes.cost_local_logistics   === "rate"
-      ? Math.round(baseCostKrw * costRates.cost_local_logistics   / 100)
-      : costs.cost_local_logistics,
-    cost_freight:           costModes.cost_freight           === "rate"
-      ? Math.round(baseCostKrw * costRates.cost_freight           / 100)
-      : costs.cost_freight,
-    cost_domestic_customs:  costModes.cost_domestic_customs  === "rate"
-      ? Math.round(baseCostKrw * costRates.cost_domestic_customs  / 100)
-      : costs.cost_domestic_customs,
-    cost_domestic_delivery: costModes.cost_domestic_delivery === "rate"
-      ? Math.round(baseCostKrw * costRates.cost_domestic_delivery / 100)
-      : costs.cost_domestic_delivery,
-    cost_installation:      costModes.cost_installation      === "rate"
-      ? Math.round(baseCostKrw * costRates.cost_installation      / 100)
-      : costs.cost_installation,
-    cost_other:             costModes.cost_other             === "rate"
-      ? Math.round(baseCostKrw * costRates.cost_other             / 100)
-      : costs.cost_other,
+  // 일괄 추정값 채우기 핸들러
+  const applyBulkEstimate = () => {
+    const total = bulkEstimatedTotal;
+    const newCosts: ProjectCosts = {
+      cost_local_logistics:   Math.round(total * BULK_ALLOC.cost_local_logistics   / 100),
+      cost_freight:           Math.round(total * BULK_ALLOC.cost_freight           / 100),
+      cost_domestic_customs:  Math.round(total * BULK_ALLOC.cost_domestic_customs  / 100),
+      cost_domestic_delivery: Math.round(total * BULK_ALLOC.cost_domestic_delivery / 100),
+      cost_installation:      Math.round(total * BULK_ALLOC.cost_installation      / 100),
+      cost_other:             Math.round(total * BULK_ALLOC.cost_other             / 100),
+    };
+    setCosts(newCosts);
+    // 모든 항목 추정 상태로 표시
+    setCostEstimated({
+      cost_local_logistics:   true,
+      cost_freight:           true,
+      cost_domestic_customs:  true,
+      cost_domestic_delivery: true,
+      cost_installation:      true,
+      cost_other:             true,
+    });
   };
 
-  // effectiveCosts 기반으로 최종 summary 계산
-  const summary = calcProjectSummary(projItems, exchangeRate, vatRate, effectiveCosts, baseMargin);
-
-  // buildPayload — effectiveCosts 계산 이후에 정의 (클로저로 참조)
+  // buildPayload — costs를 직접 저장
   const buildPayload = () => ({
     ...(project?.id ? { id: project.id } : {}),
     title: title.trim(),
@@ -739,12 +675,12 @@ export default function ProjectDetail({ project, items, onSave, onSaveSilent, on
     confirmed_at:  confirmedAt  || null,
     delivered_at:  deliveredAt  || null,
     items: projItems,
-    cost_local_logistics:   effectiveCosts.cost_local_logistics,
-    cost_freight:           effectiveCosts.cost_freight,
-    cost_domestic_customs:  effectiveCosts.cost_domestic_customs,
-    cost_domestic_delivery: effectiveCosts.cost_domestic_delivery,
-    cost_installation:      effectiveCosts.cost_installation,
-    cost_other:             effectiveCosts.cost_other,
+    cost_local_logistics:   costs.cost_local_logistics,
+    cost_freight:           costs.cost_freight,
+    cost_domestic_customs:  costs.cost_domestic_customs,
+    cost_domestic_delivery: costs.cost_domestic_delivery,
+    cost_installation:      costs.cost_installation,
+    cost_other:             costs.cost_other,
   });
 
   const handleSave = async () => {
@@ -1095,85 +1031,117 @@ export default function ProjectDetail({ project, items, onSave, onSaveSilent, on
 
         {/* ━━━━ 구역 3: 부대비용 입력 ━━━━ */}
         <section className="px-4 py-4 border-b border-gray-100">
-          <h3 className="text-[11px] font-extrabold text-gray-400 tracking-widest uppercase mb-1">
-            03 · 부대비용
-          </h3>
-          <p className="text-[10px] text-gray-400 mb-4">
-            수입 관련 실제 발생 비용을 항목별로 입력하세요. 판매가 = (제품원가 + 부대비 합계) ÷ (1 − 마진율%)
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+
+          {/* 타이틀 + 일괄 추정 헤더 */}
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <div>
+              <h3 className="text-[11px] font-extrabold text-gray-400 tracking-widest uppercase">
+                03 · 부대비용
+              </h3>
+              <p className="text-[10px] text-gray-400 mt-0.5">
+                판매가 = (제품원가 + 부대비 합계) ÷ (1 − 마진율%)
+              </p>
+            </div>
+
+            {/* 일괄 추정 입력 박스 */}
+            <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[9px] font-bold text-blue-500 tracking-wide uppercase">일괄 추정</span>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number" min="0" max="100" step="1"
+                    value={bulkRate}
+                    onChange={e => setBulkRate(parseFloat(e.target.value) || 0)}
+                    className="w-14 text-right border border-blue-200 rounded px-1.5 py-1 text-sm font-bold text-blue-700 bg-white focus:outline-none focus:border-blue-400"
+                  />
+                  <span className="text-sm font-bold text-blue-500">%</span>
+                </div>
+              </div>
+              <div className="flex flex-col gap-0.5 pl-2 border-l border-blue-200">
+                <span className="text-[9px] text-blue-400">
+                  제품원가 × {bulkRate}%
+                </span>
+                <span className={`text-sm font-bold ${bulkEstimatedTotal > 0 ? "text-blue-700" : "text-blue-300"}`}>
+                  {bulkEstimatedTotal > 0 ? fKrwFull(bulkEstimatedTotal) : "—"}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={applyBulkEstimate}
+                disabled={bulkEstimatedTotal === 0}
+                className="ml-1 px-3 py-1.5 bg-blue-500 text-white text-[10px] font-bold rounded hover:bg-blue-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+              >
+                추정값 채우기
+              </button>
+            </div>
+          </div>
+
+          {/* 추정 안내 문구 */}
+          {Object.values(costEstimated).some(v => v) && (
+            <div className="flex items-start gap-2 mb-3 p-2 bg-blue-50 border border-blue-100 rounded-lg">
+              <span className="text-blue-400 text-xs flex-shrink-0 mt-0.5">ℹ</span>
+              <p className="text-[10px] text-blue-500 leading-relaxed">
+                <span className="font-bold">추정값</span>이 입력되었습니다.
+                실제 비용이 확정되면 해당 항목을 직접 수정하세요. 수정하면 자동으로 <span className="font-bold">확정</span> 상태로 변경됩니다.
+              </p>
+            </div>
+          )}
+
+          {/* 항목별 입력 그리드 */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <CostInput
               label="① 이태리 현지 물류비"
               desc="PICK UP / B/L / STUFFING 등"
               value={costs.cost_local_logistics}
               onChange={v => setCostField("cost_local_logistics", v)}
-              mode={costModes.cost_local_logistics}
-              onModeChange={m => setCostMode("cost_local_logistics", m)}
-              rate={costRates.cost_local_logistics}
-              onRateChange={r => setCostRate("cost_local_logistics", r)}
-              baseAmount={baseCostKrw}
+              isEstimated={costEstimated.cost_local_logistics}
             />
             <CostInput
               label="② 해상운임 / 항공운임"
               desc="OCEAN TICKET 등"
               value={costs.cost_freight}
               onChange={v => setCostField("cost_freight", v)}
-              mode={costModes.cost_freight}
-              onModeChange={m => setCostMode("cost_freight", m)}
-              rate={costRates.cost_freight}
-              onRateChange={r => setCostRate("cost_freight", r)}
-              baseAmount={baseCostKrw}
+              isEstimated={costEstimated.cost_freight}
             />
             <CostInput
               label="③ 국내 부대비용"
               desc="THC / DOC / 관세 / 수입부가세 등"
               value={costs.cost_domestic_customs}
               onChange={v => setCostField("cost_domestic_customs", v)}
-              mode={costModes.cost_domestic_customs}
-              onModeChange={m => setCostMode("cost_domestic_customs", m)}
-              rate={costRates.cost_domestic_customs}
-              onRateChange={r => setCostRate("cost_domestic_customs", r)}
-              baseAmount={baseCostKrw}
+              isEstimated={costEstimated.cost_domestic_customs}
             />
             <CostInput
               label="④ 국내 물류비용"
               desc="TRUCKING CHARGE 등"
               value={costs.cost_domestic_delivery}
               onChange={v => setCostField("cost_domestic_delivery", v)}
-              mode={costModes.cost_domestic_delivery}
-              onModeChange={m => setCostMode("cost_domestic_delivery", m)}
-              rate={costRates.cost_domestic_delivery}
-              onRateChange={r => setCostRate("cost_domestic_delivery", r)}
-              baseAmount={baseCostKrw}
+              isEstimated={costEstimated.cost_domestic_delivery}
             />
             <CostInput
               label="⑤ 시공비"
               desc="기본값 ₩300,000"
               value={costs.cost_installation}
               onChange={v => setCostField("cost_installation", v)}
-              mode={costModes.cost_installation}
-              onModeChange={m => setCostMode("cost_installation", m)}
-              rate={costRates.cost_installation}
-              onRateChange={r => setCostRate("cost_installation", r)}
-              baseAmount={baseCostKrw}
+              isEstimated={costEstimated.cost_installation}
             />
             <CostInput
               label="⑥ 기타 / 보험료"
               desc="보험료 및 기타 비용"
               value={costs.cost_other}
               onChange={v => setCostField("cost_other", v)}
-              mode={costModes.cost_other}
-              onModeChange={m => setCostMode("cost_other", m)}
-              rate={costRates.cost_other}
-              onRateChange={r => setCostRate("cost_other", r)}
-              baseAmount={baseCostKrw}
+              isEstimated={costEstimated.cost_other}
             />
           </div>
 
           {/* 부대비 소계 */}
           <div className="mt-4 pt-3 border-t border-gray-100">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-500 font-medium">부대비용 합계</span>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500 font-medium">부대비용 합계</span>
+                {Object.values(costEstimated).some(v => v) && (
+                  <span className="text-[9px] text-blue-400 bg-blue-50 px-1.5 py-0.5 rounded">추정 포함</span>
+                )}
+              </div>
               <span className="font-bold text-gray-800">{fKrwFull(summary.total_additional_costs)}</span>
             </div>
           </div>
