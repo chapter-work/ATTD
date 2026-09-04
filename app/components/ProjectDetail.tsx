@@ -870,27 +870,44 @@ export default function ProjectDetail({ project, items, onSave, onSaveSilent, on
 
           {projItems.length > 0 ? (
             <div className="overflow-x-auto -mx-4">
-              {/* supply_cost_rate 컬럼 제거됨 — 마진율 / 판매가 / 소비자가 / 이익 만 표시 */}
-              <table className="w-full text-xs border-collapse" style={{ minWidth: "860px" }}>
+              <table className="w-full text-xs border-collapse" style={{ minWidth: "960px" }}>
                 <thead>
                   <tr className="bg-gray-50 border-y border-gray-200">
                     <th className="text-center px-2 py-2 font-semibold text-gray-500 w-8">#</th>
-                    <th className="text-left px-4 py-2 font-semibold text-gray-500 w-[300px]">품목</th>
+                    <th className="text-left px-4 py-2 font-semibold text-gray-500 w-[280px]">품목</th>
                     <th className="text-center px-2 py-2 font-semibold text-gray-500 w-12">수량</th>
-                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-32">유럽 공급가<br/><span className="font-normal text-gray-400">EUR (할인 적용)</span></th>
+                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">유럽 공급가<br/><span className="font-normal text-gray-400">EUR (할인 적용)</span></th>
                     <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">제품 원가<br/><span className="font-normal text-gray-400">× 환율 KRW</span></th>
+                    <th className="text-right px-2 py-2 font-semibold text-blue-400 w-28">부대비 배분<br/><span className="font-normal text-blue-300">원가 비중 배분</span></th>
                     <th className="text-center px-2 py-2 font-semibold text-gray-500 w-16">마진율<br/><span className="font-normal text-gray-400">%</span></th>
-                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">참고 판매단가<br/><span className="font-normal text-gray-400">품목별 (부대비 제외)</span></th>
+                    <th className="text-right px-2 py-2 font-semibold text-gray-800 w-28">참고 판매단가<br/><span className="font-normal text-gray-400">원가+부대비+마진</span></th>
                     <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">국내 소비자가<br/><span className="font-normal text-gray-400">KRW 직접입력</span></th>
                     <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">공식 소비자가<br/><span className="font-normal text-gray-400">EUR×1.22→KRW</span></th>
                     <th className="text-center px-2 py-2 font-semibold text-gray-500 w-16">할인율<br/><span className="font-normal text-gray-400">%</span></th>
-                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">이익금액<br/><span className="font-normal text-gray-400">KRW (부대비 제외)</span></th>
+                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">이익금액<br/><span className="font-normal text-gray-400">부대비 포함</span></th>
                     <th className="px-2 py-2 w-8"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {projItems.map((pi, idx) => {
                     const c = calcProjectItem(pi, exchangeRate, vatRate);
+
+                    // 부대비 배분: 품목 원가 비중 × 부대비 합계
+                    const allocRatio = summary.total_product_krw > 0
+                      ? c.cost_krw_total / summary.total_product_krw
+                      : 1 / projItems.length;
+                    const allocatedCost = Math.round(summary.total_additional_costs * allocRatio);
+                    const allocatedCostPerUnit = pi.qty > 0 ? Math.round(allocatedCost / pi.qty) : 0;
+
+                    // 참고 판매단가 = (제품원가 + 배분 부대비) ÷ (1 - 마진%)
+                    const totalCostWithAlloc = c.cost_krw_total + allocatedCost;
+                    const sellPriceWithAlloc = pi.sell_margin < 100
+                      ? Math.round(totalCostWithAlloc / (1 - pi.sell_margin / 100))
+                      : 0;
+                    const sellPricePerUnit = pi.qty > 0 ? Math.round(sellPriceWithAlloc / pi.qty) : 0;
+                    // 이익 = 판매가 - (제품원가 + 부대비 배분)
+                    const profitWithAlloc = sellPriceWithAlloc - totalCostWithAlloc;
+
                     return (
                       <tr key={pi.itemId} className="hover:bg-gray-50 transition-colors">
                         <td className="px-2 py-2.5 align-top text-center">
@@ -947,6 +964,22 @@ export default function ProjectDetail({ project, items, onSave, onSaveSilent, on
                           <div className="font-medium text-gray-700">{fKrwFull(c.cost_krw_total)}</div>
                           {pi.qty > 1 && <div className="text-[10px] text-gray-400 mt-0.5">단가 {fKrwFull(c.cost_krw)}</div>}
                         </td>
+                        {/* 부대비 배분 */}
+                        <td className="px-2 py-2.5 align-top text-right">
+                          {summary.total_additional_costs > 0 ? (
+                            <>
+                              <div className="font-medium text-blue-600">{fKrwFull(allocatedCost)}</div>
+                              {pi.qty > 1 && (
+                                <div className="text-[10px] text-blue-400 mt-0.5">단가 {fKrwFull(allocatedCostPerUnit)}</div>
+                              )}
+                              <div className="text-[9px] text-blue-400 mt-0.5">
+                                {(allocRatio * 100).toFixed(1)}% 배분
+                              </div>
+                            </>
+                          ) : (
+                            <span className="text-gray-300 text-[10px]">—</span>
+                          )}
+                        </td>
                         {/* 마진율 */}
                         <td className="px-2 py-2.5 align-top text-center">
                           <input
@@ -956,11 +989,15 @@ export default function ProjectDetail({ project, items, onSave, onSaveSilent, on
                             className="w-14 text-center border border-gray-200 rounded px-1 py-0.5 text-xs focus:outline-none focus:border-black"
                           />
                         </td>
-                        {/* 참고 판매단가 (품목별, 부대비 미포함) */}
+                        {/* 참고 판매단가 (원가 + 부대비 배분 + 마진) */}
                         <td className="px-2 py-2.5 align-top text-right">
-                          <div className="font-bold text-black">{fKrwFull(c.sell_price_total)}</div>
-                          {pi.qty > 1 && <div className="text-[10px] text-gray-400 mt-0.5">단가 {fKrwFull(c.sell_price)}</div>}
-                          <div className="text-[9px] text-orange-400 mt-0.5">부대비 미포함</div>
+                          <div className="font-bold text-black">{fKrwFull(sellPriceWithAlloc)}</div>
+                          {pi.qty > 1 && (
+                            <div className="text-[10px] text-gray-400 mt-0.5">단가 {fKrwFull(sellPricePerUnit)}</div>
+                          )}
+                          {summary.total_additional_costs > 0 && (
+                            <div className="text-[9px] text-blue-500 mt-0.5">부대비 포함</div>
+                          )}
                         </td>
                         {/* 국내 소비자가 */}
                         <td className="px-2 py-2.5 align-top text-right">
@@ -994,15 +1031,13 @@ export default function ProjectDetail({ project, items, onSave, onSaveSilent, on
                             <span className="text-gray-300">—</span>
                           )}
                         </td>
-                        {/* 이익금액 (품목별, 부대비 미포함) */}
+                        {/* 이익금액 (부대비 배분 포함) */}
                         <td className="px-2 py-2.5 align-top text-right">
-                          <div className={`font-semibold ${c.profit_total >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-                            {fKrwFull(c.profit_total)}
+                          <div className={`font-semibold ${profitWithAlloc >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                            {fKrwFull(profitWithAlloc)}
                           </div>
-                          {pi.qty > 1 && (
-                            <div className={`text-[10px] mt-0.5 ${c.profit >= 0 ? "text-emerald-500" : "text-red-400"}`}>
-                              단가 {fKrwFull(c.profit)}
-                            </div>
+                          {summary.total_additional_costs > 0 && (
+                            <div className="text-[9px] text-blue-400 mt-0.5">부대비 포함</div>
                           )}
                         </td>
                         {/* 삭제 */}
