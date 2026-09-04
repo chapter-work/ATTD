@@ -537,7 +537,7 @@ export default function ProjectDetail({ project, items, onSave, onSaveSilent, on
   const [projectDate,  setProjectDate]  = useState(new Date().toISOString().slice(0, 10));
   const [exchangeRate, setExchangeRate] = useState(1700);
   const [vatRate,      setVatRate]      = useState(10);
-  const [baseMargin,   setBaseMargin]   = useState(30);
+  const [baseMargin,   setBaseMargin]   = useState(20);
   const [status,       setStatus]       = useState<ProjectStatus>("draft");
   const [notes,        setNotes]        = useState("");
   const [confirmedAt,  setConfirmedAt]  = useState<string>("");
@@ -596,7 +596,7 @@ export default function ProjectDetail({ project, items, onSave, onSaveSilent, on
     } else {
       setTitle(""); setClient("");
       setProjectDate(new Date().toISOString().slice(0, 10));
-      setExchangeRate(1700); setVatRate(10); setBaseMargin(30);
+      setExchangeRate(1700); setVatRate(10); setBaseMargin(20);
       setStatus("draft"); setNotes(""); setConfirmedAt(""); setDeliveredAt("");
       setProjItems([]);
       setCosts({ ...DEFAULT_COSTS });
@@ -761,7 +761,7 @@ export default function ProjectDetail({ project, items, onSave, onSaveSilent, on
               <div className="flex items-center gap-1">
                 <input
                   type="number" value={baseMargin}
-                  onChange={e => setBaseMargin(parseFloat(e.target.value) || 30)}
+                  onChange={e => setBaseMargin(parseFloat(e.target.value) || 20)}
                   className="border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:border-black w-full"
                 />
                 <span className="text-xs text-gray-400 flex-shrink-0">%</span>
