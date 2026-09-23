@@ -227,6 +227,16 @@ function openCostSheetWindow(
 
   const rowsHtml = projItems.map((pi, i) => {
     const c = calcs[i];
+    // 부대비 배분 (프로젝트 화면 참고판매단가와 동일 방식)
+    const allocRatio        = summary.total_product_krw > 0
+      ? c.cost_krw_total / summary.total_product_krw
+      : 1 / projItems.length;
+    const allocatedCost     = Math.round(summary.total_additional_costs * allocRatio);
+    const totalCostWithAlloc = c.cost_krw_total + allocatedCost;            // 제품원가 + 배분부대비
+    const sellPriceTotal    = Math.round(totalCostWithAlloc * (1 + pi.sell_margin / 100)); // ×(1+마진%)
+    const sellPriceUnit     = pi.qty > 0 ? Math.round(sellPriceTotal / pi.qty) : sellPriceTotal;
+    const profitTotal       = sellPriceTotal - totalCostWithAlloc;
+
     const imgHtml = pi.snap.img
       ? `<img src="${pi.snap.img}" style="width:44px;height:44px;object-fit:contain;border-radius:4px;background:#fafafa;padding:3px;display:block;" />`
       : `<div style="width:44px;height:44px;background:#f0f0f0;border-radius:4px;"></div>`;
@@ -245,16 +255,18 @@ function openCostSheetWindow(
           ${pi.qty > 1 ? `<div style="color:#aaa;font-size:9px;">합 €${(pi.price_eur * pi.qty).toFixed(2)}</div>` : ""}
         </td>
         <td style="padding:8px 5px;vertical-align:top;text-align:right;font-size:10px;white-space:nowrap;">
-          <div style="font-weight:600;color:#333;">${fKrwFull(c.cost_krw)}</div>
-          ${pi.qty > 1 ? `<div style="color:#aaa;font-size:9px;">합 ${fKrwFull(c.cost_krw_total)}</div>` : ""}
+          <div style="font-weight:600;color:#333;">${fKrwFull(c.cost_krw_total)}</div>
+          <div style="color:#2563eb;font-size:9px;">+부대비 ${fKrwFull(allocatedCost)}</div>
+          <div style="font-weight:700;color:#111;border-top:1px solid #eee;margin-top:2px;padding-top:2px;">= ${fKrwFull(totalCostWithAlloc)}</div>
+          ${pi.qty > 1 ? `<div style="color:#aaa;font-size:9px;">단가 ${fKrwFull(Math.round(totalCostWithAlloc/pi.qty))}</div>` : ""}
         </td>
         <td style="padding:8px 5px;vertical-align:top;text-align:center;font-size:10px;color:#555;">${pi.sell_margin}%</td>
         <td style="padding:8px 5px;vertical-align:top;text-align:right;font-size:10px;white-space:nowrap;">
-          <div style="font-weight:700;color:#111;">${fKrwFull(c.sell_price)}</div>
-          ${pi.qty > 1 ? `<div style="color:#aaa;font-size:9px;">합 ${fKrwFull(c.sell_price_total)}</div>` : ""}
+          <div style="font-weight:700;color:#111;">${fKrwFull(sellPriceUnit)}</div>
+          ${pi.qty > 1 ? `<div style="color:#aaa;font-size:9px;">합 ${fKrwFull(sellPriceTotal)}</div>` : ""}
         </td>
         <td style="padding:8px 5px;vertical-align:top;text-align:right;font-size:10px;white-space:nowrap;">
-          <div style="font-weight:700;color:${c.profit >= 0 ? "#059669" : "#dc2626"};">${fKrwFull(c.profit_total)}</div>
+          <div style="font-weight:700;color:${profitTotal >= 0 ? "#059669" : "#dc2626"};">${fKrwFull(profitTotal)}</div>
         </td>
       </tr>`;
   }).join("");
@@ -390,7 +402,7 @@ function openCostSheetWindow(
     <div class="summary-block">
       <div class="summary-block-title">수익 요약</div>
       <div class="sum-row"><span class="sum-lbl">실제 총원가</span><span class="sum-val">${fKrwFull(summary.total_cost_krw)}</span></div>
-      <div class="sum-row"><span class="sum-lbl">마진율 (${baseMargin}%)</span><span class="sum-val">÷ (1 - ${baseMargin}%)</span></div>
+      <div class="sum-row"><span class="sum-lbl">마진율 (${baseMargin}%)</span><span class="sum-val">× (1 + ${baseMargin}%)</span></div>
       <div class="sum-row total"><span class="sum-lbl">고객 판매가</span><span class="sum-val blue">${fKrwFull(summary.total_sell)}</span></div>
       <div class="sum-row"><span class="sum-lbl">수익금액</span><span class="sum-val ${summary.total_profit >= 0 ? "green" : "red"}">${fKrwFull(summary.total_profit)}</span></div>
       <div class="sum-row"><span class="sum-lbl">실현 마진율</span><span class="sum-val ${summary.avg_margin >= 20 ? "green" : "red"}">${summary.avg_margin.toFixed(1)}%</span></div>
@@ -1216,7 +1228,7 @@ export default function ProjectDetail({ project, items, onSave, onSaveSilent, on
                 <SummaryCard
                   label="총 고객 판매가"
                   value={fKrwFull(summary.total_sell)}
-                  sub={`= 총원가 ÷ (1 − ${baseMargin}%)`}
+                  sub={`= 총원가 × (1 + ${baseMargin}%)`}
                   highlight
                 />
                 <div className="grid grid-cols-2 gap-3">

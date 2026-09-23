@@ -165,9 +165,7 @@ export function calcProjectItem(
 ): ProjectItemCalc {
   const cost_krw        = item.price_eur * exchangeRate;
   const total_cost      = cost_krw;  // 부대비는 프로젝트 레벨
-  const sell_price      = item.sell_margin >= 100
-    ? total_cost
-    : total_cost / (1 - item.sell_margin / 100);
+  const sell_price      = Math.round(total_cost * (1 + item.sell_margin / 100));  // cost-based markup ×(1+마진%)
   const sell_price_total = sell_price * item.qty;
   const retail_eur      = item.snap.price_eur * 1.22;
   const retail_krw      = retail_eur * exchangeRate;
@@ -263,11 +261,10 @@ export function calcProjectSummary(
 
   const total_cost_krw = total_product_krw + total_additional_costs;
 
-  // 판매가 = 총원가 ÷ (1 - 마진율%)
-  const margin = Math.min(baseMargin, 99.9);
-  const total_sell = margin >= 100 ? total_cost_krw : total_cost_krw / (1 - margin / 100);
+  // 판매가 = 총원가 × (1 + 마진율%)  ← cost-based markup
+  const total_sell   = Math.round(total_cost_krw * (1 + baseMargin / 100));
   const total_profit = total_sell - total_cost_krw;
-  const avg_margin = total_sell > 0 ? (total_profit / total_sell) * 100 : 0;
+  const avg_margin   = total_cost_krw > 0 ? (total_profit / total_cost_krw) * 100 : 0;
 
   return {
     total_eur,
