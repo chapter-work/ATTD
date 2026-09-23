@@ -905,7 +905,7 @@ export default function ProjectDetail({ project, items, onSave, onSaveSilent, on
                     <th className="text-right px-2 py-2 font-semibold text-blue-400 w-28">부대비 배분<br/><span className="font-normal text-blue-300">원가 비중 배분</span></th>
                     <th className="text-center px-2 py-2 font-semibold text-gray-500 w-16">마진율<br/><span className="font-normal text-gray-400">%</span></th>
                     <th className="text-right px-2 py-2 font-semibold text-gray-800 w-28">참고 판매단가<br/><span className="font-normal text-gray-400">원가+부대비+마진</span></th>
-                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">국내 소비자가<br/><span className="font-normal text-gray-400">KRW 직접입력</span></th>
+                    <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">국내 소비자가<br/><span className="font-normal text-gray-400">DB등록 or 직접입력</span></th>
                     <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">공식 소비자가<br/><span className="font-normal text-gray-400">EUR×1.22→KRW</span></th>
                     <th className="text-center px-2 py-2 font-semibold text-gray-500 w-16">할인율<br/><span className="font-normal text-gray-400">%</span></th>
                     <th className="text-right px-2 py-2 font-semibold text-gray-500 w-28">이익금액<br/><span className="font-normal text-gray-400">부대비 포함</span></th>
@@ -1023,18 +1023,35 @@ export default function ProjectDetail({ project, items, onSave, onSaveSilent, on
                         </td>
                         {/* 국내 소비자가 */}
                         <td className="px-2 py-2.5 align-top text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <input
-                              type="number" step="1000" min="0"
-                              value={pi.domestic_retail || ""}
-                              placeholder="0"
-                              onChange={e => updateItem(pi.itemId, "domestic_retail", e.target.value)}
-                              className="w-24 text-right border border-gray-200 rounded px-1 py-0.5 text-xs focus:outline-none focus:border-black"
-                            />
-                            <span className="text-[10px] text-gray-400">₩</span>
-                          </div>
-                          {pi.domestic_retail > 0 && (
-                            <div className="text-[10px] text-gray-400 mt-0.5 text-right">{fKrwFull(pi.domestic_retail)}</div>
+                          {c.domestic_retail_source === "db" ? (
+                            /* DB 등록값: 읽기 전용 표시 */
+                            <div>
+                              <div className="flex items-center justify-end gap-1">
+                                <span className="text-xs font-semibold text-emerald-700">{fKrwFull(c.domestic_retail_value)}</span>
+                                <span className="text-[9px] font-bold bg-emerald-100 text-emerald-700 rounded px-1 py-0.5 leading-none">DB</span>
+                              </div>
+                              <div className="text-[9px] text-emerald-500 mt-0.5 text-right">상품 등록 공식가</div>
+                            </div>
+                          ) : (
+                            /* 직접 입력 */
+                            <div>
+                              <div className="flex items-center justify-end gap-1">
+                                <input
+                                  type="number" step="1000" min="0"
+                                  value={pi.domestic_retail || ""}
+                                  placeholder="0"
+                                  onChange={e => updateItem(pi.itemId, "domestic_retail", e.target.value)}
+                                  className="w-24 text-right border border-gray-200 rounded px-1 py-0.5 text-xs focus:outline-none focus:border-black"
+                                />
+                                <span className="text-[10px] text-gray-400">₩</span>
+                              </div>
+                              {pi.domestic_retail > 0 && (
+                                <div className="flex items-center justify-end gap-1 mt-0.5">
+                                  <span className="text-[9px] text-gray-400">{fKrwFull(pi.domestic_retail)}</span>
+                                  <span className="text-[9px] font-bold bg-amber-100 text-amber-600 rounded px-1 py-0.5 leading-none">추정</span>
+                                </div>
+                              )}
+                            </div>
                           )}
                         </td>
                         {/* 공식 소비자가 */}
@@ -1045,10 +1062,15 @@ export default function ProjectDetail({ project, items, onSave, onSaveSilent, on
                         </td>
                         {/* 할인율 */}
                         <td className="px-2 py-2.5 align-top text-center">
-                          {pi.domestic_retail > 0 ? (
-                            <span className={`font-semibold ${c.discount_rate >= 0 ? "text-blue-600" : "text-red-500"}`}>
-                              {fPct(c.discount_rate)}
-                            </span>
+                          {c.domestic_retail_source !== "none" ? (
+                            <div>
+                              <span className={`font-semibold ${c.discount_rate >= 0 ? "text-blue-600" : "text-red-500"}`}>
+                                {fPct(c.discount_rate)}
+                              </span>
+                              {c.domestic_retail_source === "db" && (
+                                <div className="text-[9px] text-emerald-500 mt-0.5">공식가 기준</div>
+                              )}
+                            </div>
                           ) : (
                             <span className="text-gray-300">—</span>
                           )}

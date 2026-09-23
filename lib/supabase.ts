@@ -154,6 +154,8 @@ export type ProjectItemCalc = {
   retail_krw: number;
   retail_krw_total: number;
   discount_rate: number;      // 국내 소비자가 대비 할인율
+  domestic_retail_value: number;   // 실제 사용된 국내 소비자가 (snap 또는 pi 직접입력)
+  domestic_retail_source: "db" | "manual" | "none";  // 출처: db=상품DB등록, manual=프로젝트직접입력, none=없음
   profit: number;             // 참고용 이익 (부대비 미포함)
   profit_total: number;
 };
@@ -169,9 +171,14 @@ export function calcProjectItem(
   const sell_price_total = sell_price * item.qty;
   const retail_eur      = item.snap.price_eur * 1.22;
   const retail_krw      = retail_eur * exchangeRate;
-  const domestic_retail = item.domestic_retail ?? 0;
-  const discount_rate   = domestic_retail > 0
-    ? (1 - sell_price / domestic_retail) * 100
+  // 국내 소비자가: snap(DB등록) 우선, 없으면 pi 직접입력, 둘 다 없으면 0
+  const snap_domestic  = item.snap.domestic_retail ?? 0;
+  const pi_domestic    = item.domestic_retail ?? 0;
+  const domestic_retail_value  = snap_domestic > 0 ? snap_domestic : pi_domestic;
+  const domestic_retail_source: "db" | "manual" | "none" =
+    snap_domestic > 0 ? "db" : pi_domestic > 0 ? "manual" : "none";
+  const discount_rate  = domestic_retail_value > 0
+    ? (1 - sell_price / domestic_retail_value) * 100
     : 0;
   const profit = sell_price - total_cost;
 
@@ -190,6 +197,8 @@ export function calcProjectItem(
     retail_krw,
     retail_krw_total:     retail_krw * item.qty,
     discount_rate,
+    domestic_retail_value,
+    domestic_retail_source,
     profit,
     profit_total:         profit * item.qty,
   };
