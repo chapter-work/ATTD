@@ -16,6 +16,7 @@ export type Item = {
   finish: string;
   price_eur: number;
   discount: number;
+  domestic_retail: number;    // 국내 소비자가 (KRW)
   notes: string;
   img: string | null;
   created_at: string;

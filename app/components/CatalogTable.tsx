@@ -2,6 +2,9 @@
 
 import { Item, fEur, fKrw, discountedPrice } from "@/lib/supabase";
 
+const fDomestic = (v: number) =>
+  v > 0 ? "₩ " + v.toLocaleString("ko-KR") : "-";
+
 interface CatalogTableProps {
   items: Item[];
   exchangeRate: number;
@@ -22,7 +25,7 @@ export default function CatalogTable({ items, exchangeRate, onEdit, onDelete }: 
 
   return (
     <div className="overflow-x-auto">
-      <table className="text-sm border-collapse" style={{minWidth: "820px", width: "100%"}}>
+      <table className="text-sm border-collapse" style={{minWidth: "960px", width: "100%"}}>
         <thead>
           <tr className="bg-[#111] text-white text-xs">
             <th className="px-2 py-3 text-left font-medium" style={{width: "96px", minWidth: "96px"}}>사진</th>
@@ -34,6 +37,7 @@ export default function CatalogTable({ items, exchangeRate, onEdit, onDelete }: 
             <th className="px-3 py-3 text-right font-medium whitespace-nowrap">유럽 리테일가</th>
             <th className="px-3 py-3 text-center font-medium whitespace-nowrap">할인율</th>
             <th className="px-3 py-3 text-right font-medium whitespace-nowrap">할인가</th>
+            <th className="px-3 py-3 text-right font-medium whitespace-nowrap">국내 소비자가</th>
             <th className="px-2 py-3"></th>
           </tr>
         </thead>
@@ -119,6 +123,13 @@ export default function CatalogTable({ items, exchangeRate, onEdit, onDelete }: 
                 <td className="px-3 py-2 text-right whitespace-nowrap">
                   <div className="font-bold text-black">{fEur(dp)}</div>
                   <div className="text-[10px] text-gray-400 mt-0.5">{fKrw(dp, exchangeRate)}</div>
+                </td>
+
+                {/* 국내 소비자가 */}
+                <td className="px-3 py-2 text-right whitespace-nowrap">
+                  <div className={`font-bold ${(item.domestic_retail ?? 0) > 0 ? "text-black" : "text-gray-300"}`}>
+                    {fDomestic(item.domestic_retail ?? 0)}
+                  </div>
                 </td>
 
                 {/* 액션 */}

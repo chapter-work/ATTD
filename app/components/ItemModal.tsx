@@ -16,7 +16,7 @@ const CATEGORIES = ["Sofa", "Chair", "Armchair", "Lounge Chair", "Table", "Desk"
 export default function ItemModal({ open, item, onClose, onSave }: ItemModalProps) {
   const [form, setForm] = useState({
     brand: "", category: "", model: "", code: "",
-    dims: "", finish: "", price_eur: "", discount: "", notes: "",
+    dims: "", finish: "", price_eur: "", discount: "", domestic_retail: "", notes: "",
   });
   const [imgPreview, setImgPreview] = useState<string | null>(null);
   const [imgFile, setImgFile] = useState<File | null>(null);
@@ -35,11 +35,12 @@ export default function ItemModal({ open, item, onClose, onSave }: ItemModalProp
           finish: item.finish || "",
           price_eur: String(item.price_eur || ""),
           discount: String(item.discount || ""),
+          domestic_retail: String(item.domestic_retail || ""),
           notes: item.notes || "",
         });
         setImgPreview(item.img || null);
       } else {
-        setForm({ brand:"", category:"", model:"", code:"", dims:"", finish:"", price_eur:"", discount:"", notes:"" });
+        setForm({ brand:"", category:"", model:"", code:"", dims:"", finish:"", price_eur:"", discount:"", domestic_retail:"", notes:"" });
         setImgPreview(null);
       }
       setImgFile(null);
@@ -69,6 +70,7 @@ export default function ItemModal({ open, item, onClose, onSave }: ItemModalProp
         finish: form.finish.trim(),
         price_eur: parseFloat(form.price_eur) || 0,
         discount: parseFloat(form.discount) || 0,
+        domestic_retail: parseFloat(form.domestic_retail) || 0,
         notes: form.notes.trim(),
       }, imgFile);
       onClose();
@@ -187,7 +189,7 @@ export default function ItemModal({ open, item, onClose, onSave }: ItemModalProp
           {/* 유럽 리테일가 + 할인율 */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">유럽 리테일가 EUR *</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">유럽 리테일가 EUR</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">€</span>
                 <input
@@ -209,6 +211,20 @@ export default function ItemModal({ open, item, onClose, onSave }: ItemModalProp
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">%</span>
               </div>
+            </div>
+          </div>
+
+          {/* 국내 소비자가 */}
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">국내 소비자가 KRW</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₩</span>
+              <input
+                type="number" min="0" step="1" value={form.domestic_retail}
+                onChange={e => setForm(f => ({...f, domestic_retail: e.target.value}))}
+                className="w-full border border-gray-200 rounded-lg pl-7 pr-3 py-2 text-sm focus:outline-none focus:border-black transition-colors"
+                placeholder="0"
+              />
             </div>
           </div>
 
