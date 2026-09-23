@@ -65,12 +65,23 @@ function openProjectQuotePrintWindow(
   projItems: ProjectItem[],
   exchangeRate: number,
   vatRate: number,
+  costs?: Partial<ProjectCosts>,
+  baseMargin?: number,
 ) {
-  const calcs = projItems.map(pi => calcProjectItem(pi, exchangeRate, vatRate));
-  const totalKrw = calcs.reduce((s, c) => s + c.sell_price_total, 0);
+  const calcs   = projItems.map(pi => calcProjectItem(pi, exchangeRate, vatRate));
+  const summary = calcProjectSummary(projItems, exchangeRate, vatRate, costs ?? {}, baseMargin ?? 20);
 
+  // 각 품목 판매단가 = (제품원가 + 배분부대비) × (1 + 마진%)  — 내부원가표와 동일 방식
   const rowsHtml = projItems.map((pi, i) => {
     const c = calcs[i];
+    const allocRatio        = summary.total_product_krw > 0
+      ? c.cost_krw_total / summary.total_product_krw
+      : 1 / projItems.length;
+    const allocatedCost     = Math.round(summary.total_additional_costs * allocRatio);
+    const totalCostWithAlloc = c.cost_krw_total + allocatedCost;
+    const sellPriceTotal    = Math.round(totalCostWithAlloc * (1 + pi.sell_margin / 100));
+    const sellPriceUnit     = pi.qty > 0 ? Math.round(sellPriceTotal / pi.qty) : sellPriceTotal;
+
     const imgHtml = pi.snap.img
       ? `<img src="${pi.snap.img}" style="width:52px;height:52px;object-fit:contain;border-radius:4px;background:#fafafa;padding:3px;" />`
       : `<div style="width:52px;height:52px;background:#f0f0f0;border-radius:4px;"></div>`;
@@ -85,14 +96,15 @@ function openProjectQuotePrintWindow(
         </td>
         <td style="padding:10px 8px;vertical-align:top;font-size:11px;color:#555;max-width:90px;">${pi.snap.finish || ""}</td>
         <td style="padding:10px 6px;vertical-align:top;text-align:right;font-size:12px;white-space:nowrap;">
-          <b>${fKrwFull(c.sell_price)}</b>
+          <b>${fKrwFull(sellPriceUnit)}</b>
         </td>
         <td style="padding:10px 6px;vertical-align:top;text-align:center;font-size:12px;font-weight:700;">${pi.qty}</td>
         <td style="padding:10px 6px;vertical-align:top;text-align:right;font-size:12px;white-space:nowrap;">
-          <b>${fKrwFull(c.sell_price_total)}</b>
+          <b>${fKrwFull(sellPriceTotal)}</b>
         </td>
       </tr>`;
   }).join("");
+  const totalKrw = summary.total_sell;
 
   const totalHtml = `
     <div style="display:flex;align-items:flex-end;gap:8px;">
@@ -1343,7 +1355,7 @@ export default function ProjectDetail({ project, items, onSave, onSaveSilent, on
             <button
               onClick={() => {
                 if (projItems.length === 0) { alert("품목을 먼저 추가하세요"); return; }
-                openProjectQuotePrintWindow(title, client, projectDate, projItems, exchangeRate, vatRate);
+                openProjectQuotePrintWindow(title, client, projectDate, projItems, exchangeRate, vatRate, costs, baseMargin);
               }}
               className="flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-500 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors"
             >
