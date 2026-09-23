@@ -1265,14 +1265,21 @@ export default function ProjectDetail({ project, items, onSave, onSaveSilent, on
                   // ① 프로젝트 먼저 자동 저장 (화면 닫지 않음, alert 없이)
                   await (onSaveSilent ?? onSave)(buildPayload());
 
-                  // ② 견적서 생성
+                  // ② 견적서 생성 — 프로젝트 화면 "참고 판매단가"와 동일한 방식으로 계산
+                  //   sellPricePerUnit = (품목원가 + 품목배분부대비) × (1 + 마진율%) / qty
                   const quoteItems: QuoteItem[] = projItems.map(pi => {
                     const c = calcProjectItem(pi, exchangeRate, vatRate);
-                    const itemCostRatio = summary.total_product_krw > 0
-                      ? (c.cost_krw_total / summary.total_product_krw)
-                      : (1 / projItems.length);
-                    const allocatedSell = summary.total_sell * itemCostRatio / pi.qty;
-                    const sellPriceEurEquiv = allocatedSell / exchangeRate;
+                    // 부대비 배분 (원가 비율 기준)
+                    const allocRatio = summary.total_product_krw > 0
+                      ? c.cost_krw_total / summary.total_product_krw
+                      : 1 / projItems.length;
+                    const allocatedCost = Math.round(summary.total_additional_costs * allocRatio);
+                    // 참고 판매단가 = (제품원가합계 + 배분부대비) × (1 + 마진율%)
+                    const totalCostWithAlloc = c.cost_krw_total + allocatedCost;
+                    const sellPriceWithAlloc = Math.round(totalCostWithAlloc * (1 + pi.sell_margin / 100));
+                    // 단가 (1개 기준) → EUR 환산해서 snap에 저장
+                    const sellPricePerUnit = pi.qty > 0 ? Math.round(sellPriceWithAlloc / pi.qty) : sellPriceWithAlloc;
+                    const sellPriceEurEquiv = sellPricePerUnit / exchangeRate;
                     return {
                       itemId: pi.itemId,
                       qty: pi.qty,
